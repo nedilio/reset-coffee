@@ -30,13 +30,13 @@ export default async function AdminPage() {
       <h2>Admin Page</h2>
       <p>Admins only</p>
       <Table>
-        <TableCaption>A list of your recent invoices.</TableCaption>
+        <TableCaption>Lista de usuarios</TableCaption>
         <TableHeader>
           <TableRow>
             <TableHead className="w-[100px]">Nombre</TableHead>
             <TableHead>email</TableHead>
             <TableHead>cafés</TableHead>
-            <TableHead className="text-right">Acciones</TableHead>
+            <TableHead className="text-center">Acciones</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -44,36 +44,48 @@ export default async function AdminPage() {
             <TableRow key={id}>
               <TableCell className="font-medium">{name}</TableCell>
               <TableCell>{email}</TableCell>
-              <TableCell>{coffees}</TableCell>
-              <TableCell className="text-right">
-                <form
-                  action={async () => {
-                    "use server";
-                    await supabase.from("users").upsert({ id, coffees: 0 });
-                    revalidatePath("/admin");
-                  }}
-                >
-                  <Button>
-                    <IconEdit />
-                  </Button>
-                </form>
-                <Button>
-                  <IconTrash />
-                </Button>
-                <form
-                  action={async () => {
-                    "use server";
-                    revalidatePath("/admin");
-                    await supabase
-                      .from("users")
-                      .upsert({ id, coffees: coffees + 1 });
-                  }}
-                >
-                  <Button>
-                    <IconPlus />
-                    <IconCoffeeOff />
-                  </Button>
-                </form>
+              <TableCell className="text-center font-bold text-xl">
+                {coffees}
+              </TableCell>
+              <TableCell>
+                <div className="flex gap-x-4">
+                  <form
+                    action={async () => {
+                      "use server";
+                      await supabase.from("users").upsert({ id, coffees: 0 });
+                      revalidatePath("/admin");
+                    }}
+                  >
+                    <Button>
+                      <IconEdit />
+                    </Button>
+                  </form>
+                  <form
+                    action={async () => {
+                      "use server";
+                      await supabase.from("users").delete().eq("id", id);
+                      revalidatePath("/admin");
+                    }}
+                  >
+                    <Button>
+                      <IconTrash />
+                    </Button>
+                  </form>
+                  <form
+                    action={async () => {
+                      "use server";
+                      revalidatePath("/admin");
+                      await supabase
+                        .from("users")
+                        .upsert({ id, coffees: coffees + 1 });
+                    }}
+                  >
+                    <Button>
+                      <IconPlus />
+                      <IconCoffeeOff />
+                    </Button>
+                  </form>
+                </div>
               </TableCell>
             </TableRow>
           ))}
