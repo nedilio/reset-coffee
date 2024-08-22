@@ -8,9 +8,11 @@ import { IconLogout } from "@tabler/icons-react";
 export default async function Navbar() {
   const session = await auth();
   return (
-    <nav className="flex flex-col items-center w-full">
+    <nav className="flex flex-col items-center gap-y-2 w-full">
       <img
         className="w-52 "
+        width={208}
+        height={86}
         src="/img/reset-coffee-logo.webp"
         alt="Reset Cofee"
       />
