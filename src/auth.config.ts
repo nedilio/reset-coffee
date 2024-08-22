@@ -17,15 +17,29 @@ export const authConfig = {
         if (isLoggedIn) return true;
         return Response.redirect(new URL(`/`, nextUrl)); // Redirect unauthenticated users to login page
       } else if (isLoggedIn) {
-        return Response.redirect(new URL(`/card`, nextUrl));
+        // return Response.redirect(new URL(`/card`, nextUrl));
+        return true;
       }
       return true;
+    },
+    session({ session }) {
+      const role =
+        session.user.email === "izquierdonelson@gmail.com" ? "admin" : "user";
+      session.user.role = role;
+      return session;
     },
   },
   providers: [
     Google({
       clientId: process.env.AUTH_GOOGLE_ID,
       clientSecret: process.env.AUTH_GOOGLE_SECRET,
+      profile(profile) {
+        console.log(profile);
+        return {
+          role: profile.role ?? "user",
+          ...profile,
+        };
+      },
     }),
   ],
 } satisfies NextAuthConfig;
