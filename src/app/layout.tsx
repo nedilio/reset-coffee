@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
+import Navbar from "@/components/Navbar";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -16,7 +17,33 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={inter.className}>{children}</body>
+      <body className={inter.className}>
+        <main className="flex min-h-screen flex-col items-center justify-between p-8">
+          <Navbar></Navbar>
+          <header>Reset Coffee</header>
+          {children}
+          <footer className="text-xs flex flex-col justify-center items-center gap-y-2">
+            <p>
+              <a
+                href="https://maps.app.goo.gl/pT32jjkPNsdb8YLY6?g_st=com.google.maps.preview.copy"
+                target="_blank"
+                rel="noopener no referrer"
+              >
+                perez valenzuela 1215, providencia
+              </a>
+            </p>
+            <p>
+              <a
+                href="https://www.instagram.com/resetcoffeechile?igsh=MWh0eG1iOXBvM2F4Zw=="
+                target="_blank"
+                rel="noopenner noreferrer"
+              >
+                @resetcoffeechile
+              </a>
+            </p>
+          </footer>
+        </main>
+      </body>
     </html>
   );
 }
