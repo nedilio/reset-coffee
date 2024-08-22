@@ -20,7 +20,6 @@ export default function RootLayout({
       <body className={inter.className}>
         <main className="flex min-h-screen flex-col items-center justify-between p-8">
           <Navbar></Navbar>
-          <header>Reset Coffee</header>
           {children}
           <footer className="text-xs flex flex-col justify-center items-center gap-y-2">
             <p>
