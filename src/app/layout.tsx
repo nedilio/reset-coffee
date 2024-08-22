@@ -24,7 +24,7 @@ export default function RootLayout({
           <footer className="text-xs font-semibold flex flex-col justify-center items-center gap-y-3">
             <p>
               <a
-                href="https://maps.app.goo.gl/pT32jjkPNsdb8YLY6?g_st=com.google.maps.preview.copy"
+                href="https://maps.app.goo.gl/KfZLCrnMgPcT7Tpf6"
                 target="_blank"
                 rel="noopener no referrer"
               >
