@@ -24,7 +24,6 @@ export const authConfig = {
       return true;
     },
     session: async ({ session }) => {
-      console.log(session);
       const role =
         session.user.email === "izquierdonelson@gmail.com" ? "admin" : "user";
       session.user.role = role;
@@ -34,7 +33,6 @@ export const authConfig = {
         .select()
         .eq("email", session.user.email);
       if (data && data.length === 0) {
-        console.log("need to add user");
         await supabase
           .from("users")
           .upsert({ email, name, image, emailVerified, role });
