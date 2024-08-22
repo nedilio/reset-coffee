@@ -29,7 +29,7 @@ export default async function Navbar() {
             action={async () => {
               "use server";
               await signOut();
-              redirect("/login");
+              redirect("/");
             }}
           >
             {

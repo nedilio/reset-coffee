@@ -1,5 +1,3 @@
-import { SupabaseAdapter } from "@auth/supabase-adapter";
-import { createClient } from "@supabase/supabase-js";
 import type { NextAuthConfig } from "next-auth";
 import Google from "next-auth/providers/google";
 import { supabase } from "./supabase.config";
@@ -25,8 +23,8 @@ export const authConfig = {
       }
       return true;
     },
-    session: async (a) => {
-      const session = a.session;
+    session: async ({ session }) => {
+      console.log(session);
       const role =
         session.user.email === "izquierdonelson@gmail.com" ? "admin" : "user";
       session.user.role = role;
@@ -52,13 +50,16 @@ export const authConfig = {
     Google({
       clientId: process.env.AUTH_GOOGLE_ID,
       clientSecret: process.env.AUTH_GOOGLE_SECRET,
-      profile(profile) {
-        console.log(profile);
-        return {
-          role: profile.role ?? "user",
-          ...profile,
-        };
-      },
+      // profile(profile) {
+      //   console.log(profile);
+      //   return {
+      //     role: profile.role ?? "user",
+      //     name: profile.name,
+      //     email: profile.email,
+      //     emailVerified: profile.email_verified,
+      //     image: profile.picture,
+      //   };
+      // },
     }),
   ],
 } satisfies NextAuthConfig;
