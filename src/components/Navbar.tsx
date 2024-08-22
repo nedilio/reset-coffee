@@ -9,6 +9,7 @@ export default async function Navbar() {
   const session = await auth();
   return (
     <nav className="flex flex-col items-center">
+      <img src="/img/reset-coffee-logo.webp" alt="" />
       {session && (
         <div className="flex gap-x-2 items-center">
           <Link href={`/card`}>
