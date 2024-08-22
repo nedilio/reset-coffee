@@ -1,25 +1,20 @@
 export default async function LoginPage() {
   return (
     <div>
-      <h2>Login Page</h2>
-      <p>Log in to access the app</p>
-      <SignIn />
+      <form
+        action={async () => {
+          "use server";
+          await signIn("google");
+        }}
+      >
+        <Button className="flex gap-x-2" type="submit">
+          <span>Inicia sesión con Google</span> <GoogleLogo />
+        </Button>
+      </form>
     </div>
   );
 }
 
 import { signIn } from "@/auth";
+import GoogleLogo from "@/components/GoogleLogo";
 import { Button } from "@/components/ui/button";
-
-function SignIn() {
-  return (
-    <form
-      action={async () => {
-        "use server";
-        await signIn("google");
-      }}
-    >
-      <Button type="submit">Signin with Google</Button>
-    </form>
-  );
-}
