@@ -1,5 +1,8 @@
+import { SupabaseAdapter } from "@auth/supabase-adapter";
+import { createClient } from "@supabase/supabase-js";
 import type { NextAuthConfig } from "next-auth";
 import Google from "next-auth/providers/google";
+import { supabase } from "./supabase.config";
 
 export const authConfig = {
   pages: {
@@ -22,13 +25,29 @@ export const authConfig = {
       }
       return true;
     },
-    session({ session }) {
+    session: async (a) => {
+      const session = a.session;
       const role =
         session.user.email === "izquierdonelson@gmail.com" ? "admin" : "user";
       session.user.role = role;
+      const { email, name, image, emailVerified } = session.user;
+      const { data, error } = await supabase
+        .from("users")
+        .select()
+        .eq("email", session.user.email);
+      if (data && data.length === 0) {
+        console.log("need to add user");
+        await supabase
+          .from("users")
+          .upsert({ email, name, image, emailVerified, role });
+      }
+      if (error) {
+        console.error(error);
+      }
       return session;
     },
   },
+
   providers: [
     Google({
       clientId: process.env.AUTH_GOOGLE_ID,
