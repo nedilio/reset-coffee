@@ -11,13 +11,13 @@ export const authConfig = {
       const isOnCard = nextUrl.pathname.startsWith("/card");
       const isOnLogin = nextUrl.pathname.startsWith("/login");
       if (isOnLogin && isLoggedIn) {
-        return Response.redirect(new URL("/", nextUrl)); // Redirect authenticated users to home page
+        return Response.redirect(new URL("/card", nextUrl)); // Redirect authenticated users to home page
       }
       if (isOnCard) {
         if (isLoggedIn) return true;
-        return Response.redirect(new URL(`/login`, nextUrl)); // Redirect unauthenticated users to login page
+        return Response.redirect(new URL(`/`, nextUrl)); // Redirect unauthenticated users to login page
       } else if (isLoggedIn) {
-        return true;
+        return Response.redirect(new URL(`/card`, nextUrl));
       }
       return true;
     },
