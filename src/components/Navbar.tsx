@@ -8,8 +8,12 @@ import { IconLogout } from "@tabler/icons-react";
 export default async function Navbar() {
   const session = await auth();
   return (
-    <nav className="flex flex-col items-center">
-      <img src="/img/reset-coffee-logo.webp" alt="" />
+    <nav className="flex flex-col items-center w-full">
+      <img
+        className="w-52 "
+        src="/img/reset-coffee-logo.webp"
+        alt="Reset Cofee"
+      />
       {session && (
         <div className="flex gap-x-2 items-center">
           <Link href={`/card`}>
