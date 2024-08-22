@@ -26,7 +26,7 @@ export default async function Navbar() {
       </ul>
       {session && (
         <div className="flex gap-x-2 items-center">
-          <Link href={`/card/${session.user?.name}`}>
+          <Link href={`/card`}>
             <Avatar>
               <AvatarImage src={session.user?.image ?? ""} />
               <AvatarFallback>RC</AvatarFallback>
