@@ -3,6 +3,7 @@ import { auth, signOut } from "@/auth";
 import { redirect } from "next/navigation";
 import { Button } from "./ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { IconLogout } from "@tabler/icons-react";
 
 export default async function Navbar() {
   const session = await auth();
@@ -24,7 +25,11 @@ export default async function Navbar() {
               redirect("/login");
             }}
           >
-            {<Button>Logout 🪫</Button>}
+            {
+              <Button className="text-sm flex gap-2">
+                <span>Logout</span> <IconLogout />
+              </Button>
+            }
           </form>
         </div>
       )}
