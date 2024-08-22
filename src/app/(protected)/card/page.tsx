@@ -1,11 +1,17 @@
 import { auth } from "@/auth";
 import Confetti from "@/components/Confetti";
 import { range } from "@/lib";
+import { supabase } from "@/supabase.config";
 import { IconCoffee } from "@tabler/icons-react";
 
-export default async function CardPage({ params }: { params: { id: string } }) {
+export default async function CardPage() {
   const session = await auth();
-  const coffees = Math.floor(Math.random() * 8) + 1;
+  const email = session?.user?.email;
+  const { data: user } = await supabase
+    .from("users")
+    .select("*")
+    .eq("email", email);
+  const { coffees } = user?.[0];
 
   return (
     <div>

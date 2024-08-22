@@ -46,9 +46,17 @@ export default async function AdminPage() {
               <TableCell>{email}</TableCell>
               <TableCell>{coffees}</TableCell>
               <TableCell className="text-right">
-                <Button>
-                  <IconEdit />
-                </Button>
+                <form
+                  action={async () => {
+                    "use server";
+                    await supabase.from("users").upsert({ id, coffees: 0 });
+                    revalidatePath("/admin");
+                  }}
+                >
+                  <Button>
+                    <IconEdit />
+                  </Button>
+                </form>
                 <Button>
                   <IconTrash />
                 </Button>
