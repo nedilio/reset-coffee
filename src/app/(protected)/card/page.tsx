@@ -5,8 +5,6 @@ import { IconCoffee } from "@tabler/icons-react";
 
 export default async function CardPage({ params }: { params: { id: string } }) {
   const session = await auth();
-  console.log(session);
-  const { id } = params;
   const coffees = Math.floor(Math.random() * 8) + 1;
 
   return (
