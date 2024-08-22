@@ -1,4 +1,3 @@
-import Coffee from "@/components/coffee";
 import { range } from "@/lib";
 import { IconCoffee } from "@tabler/icons-react";
 
