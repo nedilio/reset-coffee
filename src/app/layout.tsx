@@ -21,14 +21,17 @@ export default function RootLayout({
         <main className="flex min-h-dvh flex-col items-center justify-between p-8">
           <Navbar></Navbar>
           {children}
-          <footer className="text-xs flex flex-col justify-center items-center gap-y-2">
+          <footer className="text-xs font-semibold flex flex-col justify-center items-center gap-y-3">
             <p>
               <a
                 href="https://maps.app.goo.gl/pT32jjkPNsdb8YLY6?g_st=com.google.maps.preview.copy"
                 target="_blank"
                 rel="noopener no referrer"
               >
-                perez valenzuela 1215, providencia
+                📍{" "}
+                <span className="underline text-green-950">
+                  Perez Valenzuela 1215, Providencia
+                </span>
               </a>
             </p>
             <p>
@@ -37,7 +40,10 @@ export default function RootLayout({
                 target="_blank"
                 rel="noopenner noreferrer"
               >
-                @resetcoffeechile
+                📸{" "}
+                <span className="underline text-green-950">
+                  @resetcoffeechile
+                </span>
               </a>
             </p>
           </footer>
