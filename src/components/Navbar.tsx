@@ -7,7 +7,6 @@ import { IconLogout } from "@tabler/icons-react";
 
 export default async function Navbar() {
   const session = await auth();
-  console.log(session);
   return (
     <nav className="flex flex-col items-center gap-y-2 w-full">
       <img
@@ -19,7 +18,6 @@ export default async function Navbar() {
       />
       {session && (
         <div className="flex gap-x-2 items-center">
-          <span>role: {session.user.role}</span>
           <Link href={`/card`}>
             <Avatar>
               <AvatarImage src={session.user?.image ?? ""} />
