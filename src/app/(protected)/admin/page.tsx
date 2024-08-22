@@ -9,7 +9,6 @@ import Link from "next/link";
 
 export default async function AdminPage() {
   const session = await auth();
-  console.log(session?.user.role);
   if (session?.user.role !== "admin") {
     return <div>Unauthorized</div>;
   }
