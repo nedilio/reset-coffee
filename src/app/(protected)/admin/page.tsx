@@ -40,7 +40,9 @@ export default async function AdminPage({
   const { data: users } = await supabase.from("users").select("*");
 
   const clients = filter
-    ? users?.filter((user) => user.name.toLowerCase().includes(filter))
+    ? users?.filter((user) =>
+        user.name.toLowerCase().includes(filter.toLowerCase())
+      )
     : users;
   return (
     <>
