@@ -15,13 +15,6 @@ export default async function Navbar() {
   const session = await auth();
   return (
     <nav className="flex flex-col items-center gap-y-2 w-full">
-      <img
-        className="w-52 "
-        width={208}
-        height={86}
-        src="/img/reset-coffee-logo.webp"
-        alt="Reset Cofee"
-      />
       {session && (
         <div className="flex gap-x-2 items-center">
           {session.user.role === "admin" && <Link href={`/admin`}>Admin</Link>}

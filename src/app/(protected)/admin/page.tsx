@@ -29,6 +29,7 @@ import {
 } from "@tabler/icons-react";
 import { revalidatePath } from "next/cache";
 import Link from "next/link";
+import ProtectedLayout from "../layout";
 
 export default async function AdminPage({
   searchParams,
@@ -46,7 +47,7 @@ export default async function AdminPage({
     ? users?.filter((user) => user.name.toLowerCase().includes(filter))
     : users;
   return (
-    <div>
+    <>
       <Search />
       {clients && clients?.length > 0 ? (
         <Table>
@@ -115,6 +116,6 @@ export default async function AdminPage({
       ) : (
         <div>No hay usuarios</div>
       )}
-    </div>
+    </>
   );
 }

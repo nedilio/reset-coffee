@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
-import Navbar from "@/components/Navbar";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -19,7 +18,15 @@ export default function RootLayout({
     <html lang="en">
       <body className={inter.className}>
         <main className="flex min-h-dvh flex-col items-center justify-between p-8 gap-3">
-          <Navbar></Navbar>
+          <header>
+            <img
+              className="w-52 mx-auto "
+              width={208}
+              height={86}
+              src="/img/reset-coffee-logo.webp"
+              alt="Reset Cofee"
+            />
+          </header>
           {children}
           <footer className="text-xs font-semibold flex flex-col justify-center items-center gap-y-3">
             <p>

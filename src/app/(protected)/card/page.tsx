@@ -3,6 +3,7 @@ import Confetti from "@/components/Confetti";
 import { range } from "@/lib";
 import { supabase } from "@/supabase.config";
 import { IconCoffee } from "@tabler/icons-react";
+import ProtectedLayout from "../layout";
 
 export default async function CardPage() {
   const session = await auth();
@@ -14,7 +15,7 @@ export default async function CardPage() {
   const { coffees } = user?.[0];
 
   return (
-    <div>
+    <>
       <header className="bg-green-900 text-white flex flex-col gap-y-4 p-4">
         <h1 className="text-6xl text-balance">The Reset Club</h1>
         <p className="text-xs">
@@ -42,6 +43,6 @@ export default async function CardPage() {
           );
         })}
       </div>
-    </div>
+    </>
   );
 }
