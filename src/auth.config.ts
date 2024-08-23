@@ -6,6 +6,7 @@ const adminEmails = [
   "izquierdonelson@gmail.com",
   "rey.o.brian@gmail.com",
   "cvap13@gmail.com",
+  "resetcoffeechile@gmail.com",
 ];
 
 export const authConfig = {
