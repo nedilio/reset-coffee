@@ -22,14 +22,10 @@ import {
 import { supabase } from "@/supabase.config";
 import {
   IconCoffee,
-  IconEdit,
   IconPlus,
   IconRestore,
   IconTrash,
 } from "@tabler/icons-react";
-import { revalidatePath } from "next/cache";
-import Link from "next/link";
-import ProtectedLayout from "../layout";
 
 export default async function AdminPage({
   searchParams,

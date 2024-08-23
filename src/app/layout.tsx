@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
+import Footer from "@/components/Footer";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -28,32 +29,7 @@ export default function RootLayout({
             />
           </header>
           {children}
-          <footer className="text-xs font-semibold flex flex-col justify-center items-center gap-y-3">
-            <p>
-              <a
-                href="https://maps.app.goo.gl/KfZLCrnMgPcT7Tpf6"
-                target="_blank"
-                rel="noopener no referrer"
-              >
-                📍{" "}
-                <span className="underline text-green-950">
-                  Perez Valenzuela 1215, Providencia
-                </span>
-              </a>
-            </p>
-            <p>
-              <a
-                href="https://www.instagram.com/resetcoffeechile?igsh=MWh0eG1iOXBvM2F4Zw=="
-                target="_blank"
-                rel="noopenner noreferrer"
-              >
-                📸{" "}
-                <span className="underline text-green-950">
-                  @resetcoffeechile
-                </span>
-              </a>
-            </p>
-          </footer>
+          <Footer />
         </main>
       </body>
     </html>

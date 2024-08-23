@@ -3,7 +3,6 @@ import Confetti from "@/components/Confetti";
 import { range } from "@/lib";
 import { supabase } from "@/supabase.config";
 import { IconCoffee } from "@tabler/icons-react";
-import ProtectedLayout from "../layout";
 
 export default async function CardPage() {
   const session = await auth();

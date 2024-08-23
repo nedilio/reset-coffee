@@ -23,6 +23,5 @@ export const resetCoffee = async ({ id }: { id: string }) => {
 export const deleteCoffee = async ({ id }: { id: string }) => {
   "use server";
   const response = await supabase.from("users").delete().eq("id", id);
-  console.log(response);
   revalidatePath("/admin");
 };
