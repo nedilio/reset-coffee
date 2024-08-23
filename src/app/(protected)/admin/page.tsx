@@ -2,6 +2,14 @@ import { auth } from "@/auth";
 import Search from "@/components/Search";
 import { Button } from "@/components/ui/button";
 import {
+  Dialog,
+  DialogTrigger,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import {
   Table,
   TableCaption,
   TableHeader,
@@ -34,13 +42,14 @@ export default async function AdminPage({
     <div>
       <h2>Admin Page</h2>
       <p>Admins only</p>
+
       <Search />
       {clients && clients?.length > 0 ? (
         <Table>
           <TableCaption>Lista de usuarios</TableCaption>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-[100px]">Nombre</TableHead>
+              <TableHead>Nombre</TableHead>
               <TableHead>email</TableHead>
               <TableHead>cafés</TableHead>
               <TableHead className="text-center">Acciones</TableHead>
@@ -67,17 +76,40 @@ export default async function AdminPage({
                         <IconEdit />
                       </Button>
                     </form>
-                    <form
-                      action={async () => {
-                        "use server";
-                        await supabase.from("users").delete().eq("id", id);
-                        revalidatePath("/admin");
-                      }}
-                    >
-                      <Button variant="destructive">
-                        <IconTrash />
-                      </Button>
-                    </form>
+
+                    <Dialog>
+                      <DialogTrigger asChild>
+                        <Button variant="destructive">
+                          <IconTrash />
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>Estás seguro/a?</DialogTitle>
+                          <DialogDescription>
+                            Esta acción no se puede deshacer. Esto eliminará
+                            permanentemente al cliente y borrar su progreso.
+                          </DialogDescription>
+                          <form
+                            action={async () => {
+                              "use server";
+                              console.log("borrrar", id);
+                              const response = await supabase
+                                .from("users")
+                                .delete()
+                                .eq("id", id);
+                              console.log(response);
+                              revalidatePath("/admin");
+                            }}
+                          >
+                            <Button variant="destructive" type="submit">
+                              Delete
+                            </Button>
+                          </form>
+                        </DialogHeader>
+                      </DialogContent>
+                    </Dialog>
+
                     <form
                       action={async () => {
                         "use server";
