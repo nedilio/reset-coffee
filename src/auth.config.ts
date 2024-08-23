@@ -2,6 +2,12 @@ import type { NextAuthConfig } from "next-auth";
 import Google from "next-auth/providers/google";
 import { supabase } from "./supabase.config";
 
+const adminEmails = [
+  "izquierdonelson@gmail.com",
+  "rey.o.brian@gmail.com",
+  "cvap13@gmail.com",
+];
+
 export const authConfig = {
   pages: {
     signIn: "/login",
@@ -24,25 +30,27 @@ export const authConfig = {
       if (isOnCard) {
         if (isLoggedIn) return true;
         return Response.redirect(new URL(`/`, nextUrl)); // Redirect unauthenticated users to login page
-      } else if (isLoggedIn) {
-        // return Response.redirect(new URL(`/card`, nextUrl));
-        return true;
       }
       return true;
     },
     session: async ({ session }) => {
-      const role =
-        session.user.email === "izquierdonelson@gmail.com" ? "admin" : "user";
+      const role = adminEmails.includes(session.user.email) ? "admin" : "user";
       session.user.role = role;
-      const { email, name, image, emailVerified } = session.user;
+      const { email, name, image } = session.user;
       const { data, error } = await supabase
         .from("users")
         .select()
         .eq("email", session.user.email);
+
       if (data && data.length === 0) {
         await supabase
           .from("users")
-          .upsert({ email, name, image, emailVerified, role });
+          .upsert({ email, name, image, emailVerified: session.expires, role });
+      } else {
+        await supabase
+          .from("users")
+          .update({ name, image, emailVerified: session.expires, role })
+          .eq("email", session.user.email);
       }
       if (error) {
         console.error(error);
@@ -55,16 +63,6 @@ export const authConfig = {
     Google({
       clientId: process.env.AUTH_GOOGLE_ID,
       clientSecret: process.env.AUTH_GOOGLE_SECRET,
-      // profile(profile) {
-      //   console.log(profile);
-      //   return {
-      //     role: profile.role ?? "user",
-      //     name: profile.name,
-      //     email: profile.email,
-      //     emailVerified: profile.email_verified,
-      //     image: profile.picture,
-      //   };
-      // },
     }),
   ],
 } satisfies NextAuthConfig;
