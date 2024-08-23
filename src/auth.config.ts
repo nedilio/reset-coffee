@@ -11,9 +11,16 @@ export const authConfig = {
       const isLoggedIn = !!auth?.user;
       const isOnCard = nextUrl.pathname.startsWith("/card");
       const isOnLogin = nextUrl.pathname.startsWith("/login");
+      const isAdminPage = nextUrl.pathname.startsWith("/admin");
+
+      if (isAdminPage && !isLoggedIn) {
+        return Response.redirect(new URL(`/`, nextUrl)); // Redirect unauthenticated users to login page
+      }
+
       if (isOnLogin && isLoggedIn) {
         return Response.redirect(new URL("/card", nextUrl)); // Redirect authenticated users to home page
       }
+
       if (isOnCard) {
         if (isLoggedIn) return true;
         return Response.redirect(new URL(`/`, nextUrl)); // Redirect unauthenticated users to login page
