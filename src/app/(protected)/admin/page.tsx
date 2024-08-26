@@ -53,49 +53,18 @@ export default async function AdminPage({
           <TableHeader>
             <TableRow>
               <TableHead>Nombre</TableHead>
-              <TableHead>email</TableHead>
               <TableHead>cafés</TableHead>
+              <TableHead>email</TableHead>
               <TableHead className="text-center">Acciones</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {clients?.map(({ id, name, email, picture, coffees }: User) => (
-              <TableRow key={id}>
-                <TableCell className="font-medium">{name}</TableCell>
-                <TableCell>{email}</TableCell>
-                <TableCell className="text-center font-bold text-xl">
-                  {coffees}
-                </TableCell>
-                <TableCell>
-                  <div className="flex gap-x-4">
-                    <form action={resetCoffee.bind(null, { id })}>
-                      <Button>
-                        <IconRestore />
-                      </Button>
-                    </form>
-
-                    <Dialog>
-                      <DialogTrigger asChild>
-                        <Button variant="destructive">
-                          <IconTrash />
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent>
-                        <DialogHeader>
-                          <DialogTitle>Estás seguro/a?</DialogTitle>
-                          <DialogDescription>
-                            Esta acción no se puede deshacer. Esto eliminará
-                            permanentemente al cliente y borrar su progreso.
-                          </DialogDescription>
-                          <form action={deleteCoffee.bind(null, { id })}>
-                            <Button variant="destructive" type="submit">
-                              Delete
-                            </Button>
-                          </form>
-                        </DialogHeader>
-                      </DialogContent>
-                    </Dialog>
-
+            {clients
+              ?.sort((a, b) => a.name.localeCompare(b.name))
+              .map(({ id, name, email, picture, coffees }: User) => (
+                <TableRow key={id}>
+                  <TableCell className="font-medium">
+                    {name}{" "}
                     <form action={addCoffee.bind(null, { id, coffees })}>
                       <Button
                         variant="outline"
@@ -105,10 +74,44 @@ export default async function AdminPage({
                         <IconCoffee />
                       </Button>
                     </form>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))}
+                  </TableCell>
+                  <TableCell className="text-center font-bold text-xl">
+                    {coffees}
+                  </TableCell>
+                  <TableCell>{email}</TableCell>
+                  <TableCell>
+                    <div className="flex gap-x-4">
+                      <form action={resetCoffee.bind(null, { id })}>
+                        <Button>
+                          <IconRestore />
+                        </Button>
+                      </form>
+
+                      <Dialog>
+                        <DialogTrigger asChild>
+                          <Button variant="destructive">
+                            <IconTrash />
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent>
+                          <DialogHeader>
+                            <DialogTitle>Estás seguro/a?</DialogTitle>
+                            <DialogDescription>
+                              Esta acción no se puede deshacer. Esto eliminará
+                              permanentemente al cliente y borrar su progreso.
+                            </DialogDescription>
+                            <form action={deleteCoffee.bind(null, { id })}>
+                              <Button variant="destructive" type="submit">
+                                Delete
+                              </Button>
+                            </form>
+                          </DialogHeader>
+                        </DialogContent>
+                      </Dialog>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
           </TableBody>
         </Table>
       ) : (
