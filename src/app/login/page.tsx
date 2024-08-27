@@ -7,7 +7,7 @@ export default async function LoginPage() {
           await signIn("google");
         }}
       >
-        <Button className="flex gap-x-2" type="submit">
+        <Button variant="default" className="flex gap-x-2 " type="submit">
           <span>Inicia sesión con Google</span> <GoogleLogo />
         </Button>
       </form>

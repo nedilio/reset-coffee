@@ -21,12 +21,7 @@ import {
   TableCell,
 } from "@/components/ui/table";
 import { supabase } from "@/supabase.config";
-import {
-  IconCoffee,
-  IconPlus,
-  IconRestore,
-  IconTrash,
-} from "@tabler/icons-react";
+import { IconPlus, IconRestore, IconTrash } from "@tabler/icons-react";
 
 export default async function AdminPage({
   searchParams,

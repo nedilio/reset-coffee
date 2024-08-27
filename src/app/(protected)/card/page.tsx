@@ -16,7 +16,7 @@ export default async function CardPage() {
 
   return (
     <>
-      <header className="bg-green-900 text-white flex flex-col gap-y-4 p-4">
+      <header className="bg-resetGreen text-white flex flex-col gap-y-4 p-4">
         <ResetTitle />
 
         <p className="text-sm">
@@ -29,20 +29,11 @@ export default async function CardPage() {
       </header>
       {coffees === 8 ? <Confetti /> : null}
       <div className="grid grid-cols-2 gap-4 p-3">
-        {range(8).map((_, i) => {
-          if (i < coffees) {
-            return (
-              <div key={i} className="grid justify-center">
-                <CoffeeSVG />
-              </div>
-            );
-          }
-          return (
-            <div key={i} className="grid opacity-20 justify-center">
-              <CoffeeSVG />
-            </div>
-          );
-        })}
+        {range(8).map((_, i) => (
+          <div key={i} className="grid justify-center">
+            <CoffeeSVG className={coffees <= i ? "opacity-20" : undefined} />
+          </div>
+        ))}
       </div>
     </>
   );
