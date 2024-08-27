@@ -11,14 +11,14 @@ export default async function CardPage() {
   const { data: user } = await supabase
     .from("users")
     .select("*")
-    .eq("email", email);
-  const { coffees } = user?.[0];
+    .eq("email", email)
+    .maybeSingle();
+  const { coffees } = user;
 
   return (
     <>
       <header className="bg-resetGreen text-white flex flex-col gap-y-4 p-4">
         <ResetTitle />
-
         <p className="text-sm">
           Hola!{" "}
           <span className="font-bold text-sm"> {session?.user?.name}</span>,

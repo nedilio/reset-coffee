@@ -20,7 +20,7 @@ import {
   TableBody,
   TableCell,
 } from "@/components/ui/table";
-import { supabase } from "@/supabase.config";
+import { countClients, getClients } from "@/supabase.config";
 import { IconPlus, IconRestore, IconTrash } from "@tabler/icons-react";
 
 export default async function AdminPage({
@@ -33,13 +33,10 @@ export default async function AdminPage({
   if (session?.user.role !== "admin") {
     return <div>Unauthorized</div>;
   }
-  const { data: users } = await supabase.from("users").select("*");
+  const count = (await countClients()) ?? 0;
 
-  const clients = filter
-    ? users?.filter((user) =>
-        user.name.toLowerCase().includes(filter.toLowerCase())
-      )
-    : users;
+  const clients = await getClients(count, filter);
+
   return (
     <>
       <Search />

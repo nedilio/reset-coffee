@@ -27,7 +27,7 @@ export default function Search() {
   useEffect(() => {
     const handler = setTimeout(() => {
       setDebouncedValue(inputValue);
-    }, 300); // 300ms debounce delay
+    }, 200); // 300ms debounce delay
 
     return () => {
       clearTimeout(handler);
