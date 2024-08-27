@@ -1,6 +1,7 @@
 import type { NextAuthConfig } from "next-auth";
 import Google from "next-auth/providers/google";
 import { supabase } from "./supabase.config";
+import { removeAccents } from "./lib/utils";
 
 const adminEmails = [
   "izquierdonelson@gmail.com",
@@ -43,6 +44,8 @@ export const authConfig = {
       const role = adminEmails.includes(session.user.email) ? "admin" : "user";
       session.user.role = role;
       const { email, name, image } = session.user;
+      const normalizedName = removeAccents(name ?? "");
+
       const { data, error } = await supabase
         .from("users")
         .select()
@@ -51,11 +54,22 @@ export const authConfig = {
       if (data && data.length === 0) {
         await supabase
           .from("users")
-          .upsert({ email, name, image, emailVerified: session.expires, role });
+          .upsert({
+            email,
+            name: normalizedName,
+            image,
+            emailVerified: session.expires,
+            role,
+          });
       } else {
         await supabase
           .from("users")
-          .update({ name, image, emailVerified: session.expires, role })
+          .update({
+            name: normalizedName,
+            image,
+            emailVerified: session.expires,
+            role,
+          })
           .eq("email", session.user.email);
       }
       if (error) {
