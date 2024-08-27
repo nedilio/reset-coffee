@@ -1,5 +1,6 @@
 import { addCoffee, deleteCoffee, resetCoffee } from "@/actions/coffees";
 import { auth } from "@/auth";
+import CoffeeSVG from "@/components/Coffee";
 import Search from "@/components/Search";
 import { Button } from "@/components/ui/button";
 import {
@@ -71,7 +72,7 @@ export default async function AdminPage({
                         className="bg-green-800 text-white hover:bg-green-900 hover:text-slate-300"
                       >
                         <IconPlus />
-                        <IconCoffee />
+                        <CoffeeSVG className="size-6 text-white/90" />
                       </Button>
                     </form>
                   </TableCell>

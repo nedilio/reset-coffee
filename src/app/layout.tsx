@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Figtree } from "next/font/google";
 import "./globals.css";
 import Footer from "@/components/Footer";
+import Link from "next/link";
 
 const figtree = Figtree({ subsets: ["latin"] });
 
@@ -20,13 +21,15 @@ export default function RootLayout({
       <body className={figtree.className}>
         <main className="flex min-h-dvh flex-col items-center justify-between p-8 gap-3">
           <header>
-            <img
-              className="w-52 mx-auto "
-              width={208}
-              height={86}
-              src="/img/reset-coffee-logo.webp"
-              alt="Reset Cofee"
-            />
+            <Link href="/">
+              <img
+                className="w-52 mx-auto "
+                width={208}
+                height={86}
+                src="/img/reset-coffee-logo.webp"
+                alt="Reset Cofee"
+              />
+            </Link>
           </header>
           {children}
           <Footer />
