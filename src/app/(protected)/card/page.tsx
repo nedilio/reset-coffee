@@ -1,9 +1,9 @@
 import { auth } from "@/auth";
+import CoffeeSVG from "@/components/Coffee";
 import Confetti from "@/components/Confetti";
 import ResetTitle from "@/components/ResetTitle";
 import { range } from "@/lib";
 import { supabase } from "@/supabase.config";
-import { IconCoffee } from "@tabler/icons-react";
 
 export default async function CardPage() {
   const session = await auth();
@@ -33,13 +33,13 @@ export default async function CardPage() {
           if (i < coffees) {
             return (
               <div key={i} className="grid justify-center">
-                <IconCoffee stroke={1.5} size={50} />
+                <CoffeeSVG />
               </div>
             );
           }
           return (
             <div key={i} className="grid opacity-20 justify-center">
-              <IconCoffee stroke={1} size={50} />
+              <CoffeeSVG />
             </div>
           );
         })}
