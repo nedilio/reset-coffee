@@ -17,7 +17,7 @@ export default function Search() {
   useEffect(() => {
     const handler = setTimeout(() => {
       setDebouncedValue(inputValue);
-    }, 200); // 300ms debounce delay
+    }, 250);
 
     return () => {
       clearTimeout(handler);
@@ -27,9 +27,14 @@ export default function Search() {
   useEffect(() => {
     if (debouncedValue !== searchParams.get("filter")) {
       const params = new URLSearchParams(searchParams);
-      params.set("filter", debouncedValue);
-      if (debouncedValue === "") params.delete("filter");
-      params.delete("page");
+      const page = params.get("page");
+      if (debouncedValue === "") {
+        params.delete("filter");
+        page && params.set("page", page);
+      } else {
+        params.set("filter", debouncedValue);
+        params.delete("page");
+      }
       router.replace(`${pathname}?${params.toString()}`);
     }
   }, [debouncedValue, pathname, router, searchParams, inputValue]);
