@@ -1,43 +1,33 @@
 "use client";
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
+import { useDebouncedCallback } from "use-debounce";
 
 export default function Search() {
-  const router = useRouter();
+  const { replace } = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const [inputValue, setInputValue] = useState(
-    searchParams.get("filter") || ""
-  );
-  const [debouncedValue, setDebouncedValue] = useState(inputValue);
 
-  useEffect(() => {
-    const handler = setTimeout(() => {
-      setDebouncedValue(inputValue);
-    }, 250);
-
-    return () => {
-      clearTimeout(handler);
-    };
-  }, [inputValue]);
-
-  useEffect(() => {
-    if (debouncedValue !== searchParams.get("filter")) {
-      const params = new URLSearchParams(searchParams);
-      const page = params.get("page");
-      if (debouncedValue === "") {
-        params.delete("filter");
-        page && params.set("page", page);
-      } else {
-        params.set("filter", debouncedValue);
-        params.delete("page");
-      }
-      router.replace(`${pathname}?${params.toString()}`);
+  const handleChange = useDebouncedCallback((search: string) => {
+    const params = new URLSearchParams(searchParams);
+    if (search) {
+      params.set("filter", search);
+      params.set("page", "1");
+    } else {
+      params.delete("filter");
+      params.set("page", "1");
     }
-  }, [debouncedValue, pathname, router, searchParams, inputValue]);
+    replace(`${pathname}?${params.toString()}`);
+  }, 250);
+
+  const handleReset = () => {
+    const params = new URLSearchParams(searchParams);
+    params.delete("filter");
+    params.set("page", "1");
+    replace(`${pathname}?${params.toString()}`);
+  };
 
   return (
     <>
@@ -46,13 +36,13 @@ export default function Search() {
           className="bg-gray-100"
           placeholder="🔍 Buscar por nombre..."
           type="text"
-          value={inputValue}
-          onChange={(e) => setInputValue(e.target.value)}
+          defaultValue={searchParams.get("filter") || ""}
+          onChange={(event) => handleChange(event.target.value)}
         />
         <Button
           variant="outline"
           className="absolute top-0 right-0"
-          onClick={() => setInputValue("")}
+          onClick={handleReset}
         >
           ❌
         </Button>
