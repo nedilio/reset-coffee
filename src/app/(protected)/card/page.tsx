@@ -5,33 +5,46 @@ import ResetTitle from "@/components/ResetTitle";
 import { range } from "@/lib";
 import { supabase } from "@/supabase.config";
 
+import { Londrina_Solid } from "next/font/google";
+const londrina = Londrina_Solid({ weight: "400", subsets: ["latin"] });
+
 export default async function CardPage() {
   const session = await auth();
-  const email = session?.user?.email;
+  const email = session?.user.email;
+
   const { data: user } = await supabase
     .from("users")
     .select("*")
     .eq("email", email)
     .maybeSingle();
-  const { coffees } = user;
+  const { coffees, name } = user;
 
   return (
     <>
-      <header className="bg-resetGreen text-white flex flex-col gap-y-4 p-4">
+      <header className="bg-resetGreen text-white flex flex-col gap-y-4 p-8 w-full">
         <ResetTitle />
         <p className="text-sm">
-          Hola!{" "}
-          <span className="font-bold text-sm"> {session?.user?.name}</span>,
-          tienes <span className="font-bold text-sm">{coffees}</span> de 8 cafés
-          para reclamar tu{" "}
-          <span className="font-bold text-sm">café gratis</span>
+          {coffees < 8 ? (
+            <>
+              Hola! <span className="font-bold text-sm"> {name}</span>, tienes{" "}
+              <span className="font-bold text-sm">{coffees}</span> de 8 cafés
+              para recibir tu{" "}
+              <span className="font-bold text-sm">café gratis</span>
+            </>
+          ) : (
+            <span className="flex flex-col justify-center items-center">
+              <span>¡{name}, lo lograste! Tu proximo café será gratis</span>
+              <span className={londrina.className}>Reset your day</span>
+              <span className={londrina.className}>Reset your life</span>
+              <Confetti />
+            </span>
+          )}
         </p>
       </header>
-      {coffees === 8 ? <Confetti /> : null}
       <div className="grid grid-cols-2 gap-4 p-3">
         {range(8).map((_, i) => (
           <div key={i} className="grid justify-center">
-            <CoffeeSVG className={coffees <= i ? "opacity-20" : undefined} />
+            <CoffeeSVG className={coffees <= i ? "opacity-20" : ""} />
           </div>
         ))}
       </div>
