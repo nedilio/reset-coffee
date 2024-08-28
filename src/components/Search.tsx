@@ -14,16 +14,6 @@ export default function Search() {
   );
   const [debouncedValue, setDebouncedValue] = useState(inputValue);
 
-  const createQueryString = useCallback(
-    (name: string, value: string) => {
-      const params = new URLSearchParams(searchParams.toString());
-      params.set(name, value);
-
-      return params.toString();
-    },
-    [searchParams]
-  );
-
   useEffect(() => {
     const handler = setTimeout(() => {
       setDebouncedValue(inputValue);
@@ -36,20 +26,13 @@ export default function Search() {
 
   useEffect(() => {
     if (debouncedValue !== searchParams.get("filter")) {
-      inputValue === ""
-        ? router.push(pathname)
-        : router.push(
-            pathname + "?" + createQueryString("filter", debouncedValue)
-          );
+      const params = new URLSearchParams(searchParams);
+      params.set("filter", debouncedValue);
+      if (debouncedValue === "") params.delete("filter");
+      params.delete("page");
+      router.replace(`${pathname}?${params.toString()}`);
     }
-  }, [
-    debouncedValue,
-    createQueryString,
-    pathname,
-    router,
-    searchParams,
-    inputValue,
-  ]);
+  }, [debouncedValue, pathname, router, searchParams, inputValue]);
 
   return (
     <>
