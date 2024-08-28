@@ -9,9 +9,11 @@ import { Suspense } from "react";
 export default async function AdminPage({
   searchParams,
 }: {
-  searchParams: { filter: string };
+  searchParams?: { filter: string; page: string };
 }) {
-  const { filter } = searchParams;
+  const filter = searchParams?.filter || "";
+  // const currentPage = Number(searchParams?.page) || 1;
+
   const session = await auth();
   if (session?.user.role !== "admin") {
     return <div>Unauthorized</div>;
@@ -21,8 +23,11 @@ export default async function AdminPage({
   return (
     <>
       <Search />
-      <Suspense fallback={<TableSkeleton />}>
-        <ClientsTable filter={filter} />
+      <Suspense key={filter} fallback={<TableSkeleton />}>
+        <ClientsTable
+          filter={filter}
+          // currentPage={currentPage}
+        />
       </Suspense>
     </>
   );

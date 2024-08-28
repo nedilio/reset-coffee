@@ -24,11 +24,11 @@ import CoffeeSVG from "./Coffee";
 
 interface ClientsTableProps {
   filter?: string;
-  count?: number;
+  currentPage?: number;
 }
 
-const ClientsTable = async ({ count, filter }: ClientsTableProps) => {
-  const clients = await getClients(count, filter);
+const ClientsTable = async ({ currentPage, filter }: ClientsTableProps) => {
+  const clients = await getClients(currentPage, filter);
   if (!clients) return null;
   return (
     <Table>
@@ -42,24 +42,26 @@ const ClientsTable = async ({ count, filter }: ClientsTableProps) => {
         </TableRow>
       </TableHeader>
       <TableBody>
-        {clients.map(({ id, name, email, picture, coffees }: User) => (
+        {clients.map(({ id, name, email, coffees }: User) => (
           <TableRow key={id}>
             <TableCell className="font-medium">
-              {name}{" "}
-              <form action={addCoffee.bind(null, { id, coffees })}>
-                <Button
-                  variant="outline"
-                  className="bg-green-800 text-white hover:bg-green-900 hover:text-slate-300"
-                >
-                  <IconPlus />
-                  <CoffeeSVG className="size-6 text-white/90" />
-                </Button>
-              </form>
+              <div className="flex gap-x-2 justify-between items-center">
+                <span className="text-balance text-sm">{name}</span>
+                <form action={addCoffee.bind(null, { id, coffees })}>
+                  <Button
+                    variant="outline"
+                    className="bg-green-800 text-white hover:bg-green-900 hover:text-slate-300"
+                  >
+                    <IconPlus className="size-4" />
+                    <CoffeeSVG className="size-5 text-white/90" />
+                  </Button>
+                </form>
+              </div>
             </TableCell>
             <TableCell className="text-center font-bold text-xl">
               {coffees}
             </TableCell>
-            <TableCell>{email}</TableCell>
+            <TableCell className="text-xs">{email}</TableCell>
             <TableCell>
               <div className="flex gap-x-4">
                 <form action={resetCoffee.bind(null, { id })}>

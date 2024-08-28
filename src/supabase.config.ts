@@ -3,6 +3,8 @@ const supabaseURL = process.env.NEXT_PUBLIC_SUPABASE_URL as string;
 const supabaseAnonKey = process.env.SUPABASE_ANON_KEY as string;
 export const supabase = createClient(supabaseURL, supabaseAnonKey);
 
+const CLIENTS_PER_PAGE = 5;
+
 export const countClients = async () => {
   const { count, error } = await supabase
     .from("users")
@@ -10,13 +12,16 @@ export const countClients = async () => {
   return count;
 };
 
-export const getClients = async (count?: number, filter?: string) => {
+export const getClients = async (currentPage?: number, filter?: string) => {
+  console.log(currentPage);
   let query = supabase.from("users").select("*").order("name");
   if (filter) {
     query = query.ilike("name", `%${filter}%`);
   }
-  if (count) {
-    query = query.range(0, count);
+  if (currentPage) {
+    const start = (currentPage - 1) * CLIENTS_PER_PAGE;
+    const end = currentPage * CLIENTS_PER_PAGE - 1;
+    query = query.range(start, end);
   }
 
   try {
