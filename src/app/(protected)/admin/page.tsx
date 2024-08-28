@@ -21,7 +21,7 @@ export default async function AdminPage({
   const count = (await countClients()) ?? 1;
 
   return (
-    <div className="flex-grow">
+    <div className="flex-grow w-full">
       <Search />
       <Suspense key={filter} fallback={<TableSkeleton />}>
         <ClientsTable
