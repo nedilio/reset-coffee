@@ -13,7 +13,6 @@ export const countClients = async () => {
 };
 
 export const getClients = async (currentPage?: number, filter?: string) => {
-  console.log(currentPage);
   let query = supabase.from("users").select("*").order("name");
   if (filter) {
     query = query.ilike("name", `%${filter}%`);
