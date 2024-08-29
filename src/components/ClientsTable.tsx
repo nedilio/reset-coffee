@@ -47,7 +47,9 @@ const ClientsTable = async ({ currentPage, filter }: ClientsTableProps) => {
             <TableCell className="font-medium">
               <div className="flex gap-x-2 justify-between items-center">
                 <span className="text-balance text-sm">{name}</span>
-                <form action={addCoffee.bind(null, { id, coffees })}>
+                <form action={addCoffee}>
+                  <input type="hidden" name="id" value={id} />
+                  <input type="hidden" name="coffees" value={coffees} />
                   <Button
                     variant="outline"
                     className="bg-green-800 text-white hover:bg-green-900 hover:text-slate-300"
@@ -64,7 +66,8 @@ const ClientsTable = async ({ currentPage, filter }: ClientsTableProps) => {
             <TableCell className="text-xs">{email}</TableCell>
             <TableCell>
               <div className="flex gap-x-4">
-                <form action={resetCoffee.bind(null, { id })}>
+                <form action={resetCoffee}>
+                  <input type="hidden" name="id" value={id} />
                   <Button>
                     <IconRestore />
                   </Button>
@@ -81,11 +84,12 @@ const ClientsTable = async ({ currentPage, filter }: ClientsTableProps) => {
                       <DialogTitle>Estás seguro/a?</DialogTitle>
                       <DialogDescription>
                         Esta acción no se puede deshacer. Esto eliminará
-                        permanentemente al cliente y borrar su progreso.
+                        permanentemente al cliente {name} y borrar su progreso.
                       </DialogDescription>
-                      <form action={deleteCoffee.bind(null, { id })}>
+                      <form action={deleteCoffee}>
+                        <input type="hidden" name="id" value={id} />
                         <Button variant="destructive" type="submit">
-                          Delete
+                          Borrar
                         </Button>
                       </form>
                     </DialogHeader>
