@@ -9,8 +9,8 @@ export const addCoffee = async ({
   id: string;
   coffees: number;
 }) => {
-  revalidatePath("/admin");
   await supabase.from("users").upsert({ id, coffees: coffees + 1 });
+  revalidatePath("/admin");
 };
 
 export const resetCoffee = async ({ id }: { id: string }) => {
