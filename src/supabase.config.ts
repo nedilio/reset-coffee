@@ -34,7 +34,6 @@ export const getClients = async (currentPage?: number, filter?: string) => {
 
   try {
     const { data: clients, error } = await query;
-    console.log(clients);
     return clients;
   } catch (error) {
     console.error("error", error);
