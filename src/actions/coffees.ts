@@ -1,6 +1,7 @@
 "use server";
 import { supabase } from "@/supabase.config";
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 
 export const addCoffee = async (formData: FormData) => {
   const id = formData.get("id") as string;
@@ -19,4 +20,5 @@ export const deleteCoffee = async (FormData: FormData) => {
   const id = FormData.get("id") as string;
   await supabase.from("users").delete().eq("id", id);
   revalidatePath("/admin");
+  redirect("/admin");
 };

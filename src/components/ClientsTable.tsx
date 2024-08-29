@@ -8,7 +8,6 @@ import {
   DialogHeader,
 } from "@/components/ui/dialog";
 import { IconPlus, IconRestore, IconTrash } from "@tabler/icons-react";
-import React from "react";
 import { Button } from "@/components/ui/button";
 import {
   TableCaption,
@@ -20,7 +19,8 @@ import {
   Table,
 } from "@/components/ui/table";
 import { getClients } from "@/supabase.config";
-import CoffeeSVG from "./Coffee";
+import CoffeeSVG from "@/components/Coffee";
+import ActionButton from "@/components/ui/ActionButton";
 
 interface ClientsTableProps {
   filter?: string;
@@ -50,13 +50,13 @@ const ClientsTable = async ({ currentPage, filter }: ClientsTableProps) => {
                 <form action={addCoffee}>
                   <input type="hidden" name="id" value={id} />
                   <input type="hidden" name="coffees" value={coffees} />
-                  <Button
-                    variant="outline"
+                  <ActionButton
                     className="bg-green-800 text-white hover:bg-green-900 hover:text-slate-300"
+                    isDisabled={coffees >= 8}
                   >
                     <IconPlus className="size-4" />
                     <CoffeeSVG className="size-5 text-white/90" />
-                  </Button>
+                  </ActionButton>
                 </form>
               </div>
             </TableCell>
@@ -68,9 +68,9 @@ const ClientsTable = async ({ currentPage, filter }: ClientsTableProps) => {
               <div className="flex gap-x-4">
                 <form action={resetCoffee}>
                   <input type="hidden" name="id" value={id} />
-                  <Button>
+                  <ActionButton variant="default">
                     <IconRestore />
-                  </Button>
+                  </ActionButton>
                 </form>
 
                 <Dialog>
@@ -88,9 +88,9 @@ const ClientsTable = async ({ currentPage, filter }: ClientsTableProps) => {
                       </DialogDescription>
                       <form action={deleteCoffee}>
                         <input type="hidden" name="id" value={id} />
-                        <Button variant="destructive" type="submit">
+                        <ActionButton variant="destructive" type="submit">
                           Borrar
-                        </Button>
+                        </ActionButton>
                       </form>
                     </DialogHeader>
                   </DialogContent>
