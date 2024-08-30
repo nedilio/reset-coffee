@@ -9,8 +9,6 @@ import { supabase } from "@/supabase.config";
 import { Londrina_Solid } from "next/font/google";
 const londrina = Londrina_Solid({ weight: "400", subsets: ["latin"] });
 
-console.log(TABLE_NAME);
-
 export default async function CardPage() {
   const session = await auth();
   const email = session?.user.email;
