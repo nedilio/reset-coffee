@@ -68,7 +68,7 @@ const ClientsTable = async ({ currentPage, filter }: ClientsTableProps) => {
               <div className="flex gap-x-4">
                 <form action={resetCoffee}>
                   <input type="hidden" name="id" value={id} />
-                  <ActionButton variant="default">
+                  <ActionButton variant="default" isDisabled={coffees <= 0}>
                     <IconRestore />
                   </ActionButton>
                 </form>

@@ -3,17 +3,20 @@ import CoffeeSVG from "@/components/Coffee";
 import Confetti from "@/components/Confetti";
 import ResetTitle from "@/components/ResetTitle";
 import { range } from "@/lib";
+import { TABLE_NAME } from "@/lib/constants";
 import { supabase } from "@/supabase.config";
 
 import { Londrina_Solid } from "next/font/google";
 const londrina = Londrina_Solid({ weight: "400", subsets: ["latin"] });
+
+console.log(TABLE_NAME);
 
 export default async function CardPage() {
   const session = await auth();
   const email = session?.user.email;
 
   const { data: user } = await supabase
-    .from("users")
+    .from(TABLE_NAME)
     .select("*")
     .eq("email", email)
     .maybeSingle();
