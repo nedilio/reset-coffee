@@ -26,6 +26,10 @@ export default function Search() {
     const params = new URLSearchParams(searchParams);
     params.delete("filter");
     params.set("page", "1");
+
+    // clean input
+    const input = document.getElementById("filter") as HTMLInputElement;
+    input.value = "";
     replace(`${pathname}?${params.toString()}`);
   };
 
@@ -36,6 +40,7 @@ export default function Search() {
           className="bg-gray-100"
           placeholder="🔍 Buscar por nombre..."
           type="text"
+          id="filter"
           defaultValue={searchParams.get("filter") || ""}
           onChange={(event) => handleChange(event.target.value)}
         />
