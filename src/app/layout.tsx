@@ -3,6 +3,7 @@ import { Figtree } from "next/font/google";
 import "./globals.css";
 import Footer from "@/components/Footer";
 import Link from "next/link";
+import { Analytics } from "@vercel/analytics/next";
 
 const figtree = Figtree({ subsets: ["latin"] });
 
@@ -31,6 +32,7 @@ export default function RootLayout({
               />
             </Link>
           </header>
+          <Analytics />
           {children}
           <Footer />
         </main>
