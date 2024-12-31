@@ -21,6 +21,7 @@ import {
 import { getClients } from "@/supabase.config";
 import CoffeeSVG from "@/components/Coffee";
 import ActionButton from "@/components/ui/ActionButton";
+import { track } from "@vercel/analytics";
 
 interface ClientsTableProps {
   filter?: string;
@@ -51,6 +52,13 @@ const ClientsTable = async ({ currentPage, filter }: ClientsTableProps) => {
                   <input type="hidden" name="id" value={id} />
                   <input type="hidden" name="coffees" value={coffees} />
                   <ActionButton
+                    onClick={() =>
+                      track("add_coffee", {
+                        id,
+                        email,
+                        coffees: coffees + 1,
+                      })
+                    }
                     className="bg-green-800 text-white hover:bg-green-900 hover:text-slate-300"
                     isDisabled={coffees >= 8}
                   >
