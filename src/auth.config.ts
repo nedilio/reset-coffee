@@ -3,7 +3,6 @@ import Google from "next-auth/providers/google";
 import { supabase } from "./supabase.config";
 import { removeAccents } from "./lib/utils";
 import { TABLE_NAME } from "./lib/constants";
-import { track } from "@vercel/analytics";
 
 const adminEmails = [
   "izquierdonelson@gmail.com",
@@ -47,12 +46,6 @@ export const authConfig = {
       session.user.role = role;
       const { email, name, image } = session.user;
       const normalizedName = removeAccents(name ?? "");
-      track("Inicia Sesion", {
-        email,
-        name: normalizedName,
-        image: image ?? "",
-        role,
-      });
 
       const { data, error } = await supabase
         .from(TABLE_NAME)
