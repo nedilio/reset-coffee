@@ -47,7 +47,7 @@ export const authConfig = {
       session.user.role = role;
       const { email, name, image } = session.user;
       const normalizedName = removeAccents(name ?? "");
-      track("session", { email, role });
+      await track("session", { email, role });
 
       const { data, error } = await supabase
         .from(TABLE_NAME)
