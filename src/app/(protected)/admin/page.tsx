@@ -4,7 +4,7 @@ import TablePagination from "@/components/Pagination";
 import Search from "@/components/Search";
 import TableSkeleton from "@/components/TableSkeleton";
 
-import { countClients } from "@/supabase.config";
+import { countClients } from "@/clients";
 import { Suspense } from "react";
 
 export default async function AdminPage({

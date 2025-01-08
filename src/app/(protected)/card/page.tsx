@@ -4,7 +4,7 @@ import Confetti from "@/components/Confetti";
 import ResetTitle from "@/components/ResetTitle";
 import { range } from "@/lib";
 import { TABLE_NAME } from "@/lib/constants";
-import { supabase } from "@/supabase.config";
+import { createClient } from "@/supabase-server";
 
 import { Londrina_Solid } from "next/font/google";
 const londrina = Londrina_Solid({ weight: "400", subsets: ["latin"] });
@@ -12,7 +12,7 @@ const londrina = Londrina_Solid({ weight: "400", subsets: ["latin"] });
 export default async function CardPage() {
   const session = await auth();
   const email = session?.user.email;
-
+  const supabase = await createClient();
   const { data: user } = await supabase
     .from(TABLE_NAME)
     .select("*")

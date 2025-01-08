@@ -1,10 +1,8 @@
-import { createClient } from "@supabase/supabase-js";
 import { CLIENTS_PER_PAGE, TABLE_NAME } from "./lib/constants";
-const supabaseURL = process.env.NEXT_PUBLIC_SUPABASE_URL as string;
-const supabaseAnonKey = process.env.SUPABASE_ANON_KEY as string;
-export const supabase = createClient(supabaseURL, supabaseAnonKey);
+import { createClient } from "./supabase-server";
 
 export const countClients = async (filter: string) => {
+  const supabase = await createClient();
   const query = supabase
     .from(TABLE_NAME)
     .select("*", { count: "exact", head: true })
@@ -18,6 +16,8 @@ export const countClients = async (filter: string) => {
 };
 
 export const getClients = async (currentPage?: number, filter?: string) => {
+  const supabase = await createClient();
+
   let query = supabase
     .from(TABLE_NAME)
     .select("*")
