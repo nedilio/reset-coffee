@@ -18,7 +18,7 @@ import {
   TableCell,
   Table,
 } from "@/components/ui/table";
-import { getClients } from "@/supabase.config";
+import { getClients } from "@/clients";
 import CoffeeSVG from "@/components/Coffee";
 import ActionButton from "@/components/ui/ActionButton";
 import { track } from "@vercel/analytics";
