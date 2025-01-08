@@ -21,7 +21,7 @@ import {
 import { getClients } from "@/clients";
 import CoffeeSVG from "@/components/Coffee";
 import ActionButton from "@/components/ui/ActionButton";
-import { track } from "@vercel/analytics";
+import { Tables } from "../../database.types";
 
 interface ClientsTableProps {
   filter?: string;
@@ -43,7 +43,7 @@ const ClientsTable = async ({ currentPage, filter }: ClientsTableProps) => {
         </TableRow>
       </TableHeader>
       <TableBody>
-        {clients.map(({ id, name, email, coffees }: User) => (
+        {clients.map(({ id, name, email, coffees }: Tables<"users">) => (
           <TableRow key={id}>
             <TableCell className="font-medium">
               <div className="flex gap-x-2 justify-between items-center">
