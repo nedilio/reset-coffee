@@ -1,3 +1,4 @@
+import { Tables } from "../database.types";
 import { CLIENTS_PER_PAGE, TABLE_NAME } from "./lib/constants";
 import { createClient } from "./supabase-server";
 
@@ -34,7 +35,7 @@ export const getClients = async (currentPage?: number, filter?: string) => {
 
   try {
     const { data: clients, error } = await query;
-    return clients;
+    return clients as Tables<"users">[];
   } catch (error) {
     console.error("error", error);
   }
