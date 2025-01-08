@@ -19,6 +19,7 @@ export const authConfig = {
   callbacks: {
     authorized({ auth, request: { nextUrl } }) {
       const isLoggedIn = !!auth?.user;
+      const isAdmin = adminEmails.includes(auth?.user?.email ?? "");
       const isOnCard = nextUrl.pathname.startsWith("/card");
       const isOnLogin = nextUrl.pathname.startsWith("/login");
       const isAdminPage = nextUrl.pathname.startsWith("/admin");
@@ -37,6 +38,7 @@ export const authConfig = {
       }
 
       if (isOnCard) {
+        if (isAdmin) return Response.redirect(new URL("/admin", nextUrl)); // Redirect authenticated users to home page
         if (isLoggedIn) return true;
         return Response.redirect(new URL(`/`, nextUrl)); // Redirect unauthenticated users to login page
       }
