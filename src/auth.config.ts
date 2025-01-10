@@ -5,6 +5,12 @@ import { TABLE_NAME } from "./lib/constants";
 import { track } from "@vercel/analytics/server";
 import { createClient } from "./supabase-server";
 
+import { PostHog } from "posthog-node";
+
+const posthog = new PostHog(process.env.NEXT_PUBLIC_POSTHOG_KEY!, {
+  host: process.env.NEXT_PUBLIC_POSTHOG_HOST,
+});
+
 const adminEmails = [
   "izquierdonelson@gmail.com",
   "rey.o.brian@gmail.com",
@@ -80,6 +86,17 @@ export const authConfig = {
         console.error(error);
       }
       return session;
+    },
+    signIn: async ({ user }) => {
+      const { email, name } = user;
+      posthog.capture({
+        distinctId: "login",
+        event: JSON.stringify({
+          email,
+          name,
+        }),
+      });
+      return true;
     },
   },
 
