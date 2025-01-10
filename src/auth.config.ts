@@ -88,13 +88,10 @@ export const authConfig = {
       return session;
     },
     signIn: async ({ user }) => {
-      const { email, name } = user;
+      const { email } = user;
       posthog.capture({
-        distinctId: "login",
-        event: JSON.stringify({
-          email,
-          name,
-        }),
+        distinctId: email!,
+        event: "login",
       });
       return true;
     },
