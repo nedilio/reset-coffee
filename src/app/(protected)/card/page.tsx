@@ -10,9 +10,8 @@ import { createClient } from "@/supabase-server";
 import { Londrina_Solid } from "next/font/google";
 const londrina = Londrina_Solid({ weight: "400", subsets: ["latin"] });
 
-const posthog = PosthogClient();
-
 export default async function CardPage() {
+  const posthog = PosthogClient();
   const session = await auth();
   const email = session?.user.email;
   const supabase = await createClient();
