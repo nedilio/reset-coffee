@@ -2,7 +2,6 @@ import type { NextAuthConfig } from "next-auth";
 import Google from "next-auth/providers/google";
 import { removeAccents } from "./lib/utils";
 import { TABLE_NAME } from "./lib/constants";
-import { track } from "@vercel/analytics/server";
 import { createClient } from "./supabase-server";
 
 import { PostHog } from "posthog-node";
@@ -55,7 +54,6 @@ export const authConfig = {
       session.user.role = role;
       const { email, name, image } = session.user;
       const normalizedName = removeAccents(name ?? "");
-      await track("session", { email, role });
       const supabase = await createClient();
 
       const { data, error } = await supabase
