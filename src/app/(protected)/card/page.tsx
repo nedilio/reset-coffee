@@ -1,3 +1,4 @@
+import PosthogClient from "@/app/posthog";
 import { auth } from "@/auth";
 import CoffeeSVG from "@/components/Coffee";
 import Confetti from "@/components/Confetti";
@@ -9,13 +10,8 @@ import { createClient } from "@/supabase-server";
 import { Londrina_Solid } from "next/font/google";
 const londrina = Londrina_Solid({ weight: "400", subsets: ["latin"] });
 
-import { PostHog } from "posthog-node";
-
-const posthog = new PostHog(process.env.NEXT_PUBLIC_POSTHOG_KEY!, {
-  host: process.env.NEXT_PUBLIC_POSTHOG_HOST,
-});
-
 export default async function CardPage() {
+  const posthog = PosthogClient();
   const session = await auth();
   const email = session?.user.email;
   const supabase = await createClient();
@@ -25,6 +21,7 @@ export default async function CardPage() {
     .eq("email", email)
     .maybeSingle();
   const { coffees, name } = user;
+
   posthog.capture({
     distinctId: email!,
     event: "visit_card",
