@@ -4,14 +4,28 @@ import { createClient } from "@/supabase-server";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { TablesUpdate } from "../../database.types";
+import PosthogClient from "@/app/posthog";
 
 export const addCoffee = async (formData: FormData) => {
   const supabase = await createClient();
+  const posthog = PosthogClient();
 
   const id = formData.get("id") as string;
   const coffees = parseInt(formData.get("coffees") as string);
   const payload: TablesUpdate<"users"> = { id, coffees: coffees + 1 };
   await supabase.from(TABLE_NAME).upsert(payload);
+
+  posthog.capture({
+    distinctId: id,
+    event: "addCoffee",
+    properties: {
+      eventType: "server-side",
+      coffees: coffees + 1,
+    },
+  });
+
+  await posthog.flush();
+
   revalidatePath("/admin");
 };
 

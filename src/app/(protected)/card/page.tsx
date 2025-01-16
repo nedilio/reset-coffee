@@ -31,6 +31,15 @@ export default async function CardPage() {
     },
   });
 
+  posthog.identify({
+    distinctId: email!,
+    properties: {
+      email,
+      name,
+      coffees,
+    },
+  });
+
   return (
     <>
       <header className="bg-resetGreen text-white flex flex-col gap-y-4 p-8 w-full">
