@@ -24,7 +24,7 @@ export default async function CardPage() {
 
   posthog.capture({
     distinctId: email!,
-    event: "visit_card",
+    event: "$pageview",
     properties: {
       coffees,
       name,
