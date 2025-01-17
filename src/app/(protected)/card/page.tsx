@@ -1,5 +1,6 @@
 import PosthogClient from "@/app/posthog";
 import { auth } from "@/auth";
+import CardView from "@/components/CardView";
 import CoffeeSVG from "@/components/Coffee";
 import Confetti from "@/components/Confetti";
 import ResetTitle from "@/components/ResetTitle";
@@ -8,6 +9,7 @@ import { TABLE_NAME } from "@/lib/constants";
 import { createClient } from "@/supabase-server";
 
 import { Londrina_Solid } from "next/font/google";
+import { Suspense } from "react";
 const londrina = Londrina_Solid({ weight: "400", subsets: ["latin"] });
 
 export default async function CardPage() {
@@ -22,26 +24,29 @@ export default async function CardPage() {
     .maybeSingle();
   const { coffees, name } = user;
 
-  posthog.capture({
-    distinctId: email!,
-    event: "$pageview",
-    properties: {
-      coffees,
-      name,
-    },
-  });
+  // posthog.capture({
+  //   distinctId: email!,
+  //   event: "$pageview",
+  //   properties: {
+  //     coffees,
+  //     name,
+  //   },
+  // });
 
-  posthog.identify({
-    distinctId: email!,
-    properties: {
-      email,
-      name,
-      coffees,
-    },
-  });
+  // posthog.identify({
+  //   distinctId: email!,
+  //   properties: {
+  //     email,
+  //     name,
+  //     coffees,
+  //   },
+  // });
 
   return (
     <>
+      <Suspense fallback={null}>
+        <CardView email={email!} />
+      </Suspense>
       <header className="bg-resetGreen text-white flex flex-col gap-y-4 p-8 w-full">
         <ResetTitle />
         <p className="text-sm">
