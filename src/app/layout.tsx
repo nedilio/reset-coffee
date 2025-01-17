@@ -5,7 +5,7 @@ import Footer from "@/components/Footer";
 import Link from "next/link";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
-import { PHProvider } from "@/app/providers";
+import { PhProvider } from "@/app/providers/ph-provider";
 
 const figtree = Figtree({ subsets: ["latin"] });
 
@@ -21,7 +21,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <PHProvider>
+      <PhProvider>
         <body className={figtree.className}>
           <main className="flex min-h-dvh flex-col items-center justify-between p-8 gap-3">
             <header>
@@ -41,7 +41,7 @@ export default function RootLayout({
             <Footer />
           </main>
         </body>
-      </PHProvider>
+      </PhProvider>
     </html>
   );
 }

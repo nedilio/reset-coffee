@@ -49,6 +49,7 @@ const ClientsTable = async ({ currentPage, filter }: ClientsTableProps) => {
               <div className="flex gap-x-2 justify-between items-center">
                 <span className="text-balance text-sm">{name}</span>
                 <form action={addCoffee}>
+                  <input type="hidden" name="email" value={email!} />
                   <input type="hidden" name="id" value={id} />
                   <input type="hidden" name="coffees" value={coffees} />
                   <ActionButton

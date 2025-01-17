@@ -3,12 +3,9 @@ import Google from "next-auth/providers/google";
 import { removeAccents } from "./lib/utils";
 import { TABLE_NAME } from "./lib/constants";
 import { createClient } from "./supabase-server";
+import PostHogClient from "./actions/ph-client";
 
-import { PostHog } from "posthog-node";
-
-const posthog = new PostHog(process.env.NEXT_PUBLIC_POSTHOG_KEY!, {
-  host: process.env.NEXT_PUBLIC_POSTHOG_HOST,
-});
+const posthog = PostHogClient();
 
 const adminEmails = [
   "izquierdonelson@gmail.com",
