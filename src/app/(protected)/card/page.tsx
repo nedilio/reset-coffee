@@ -1,4 +1,3 @@
-import PosthogClient from "@/app/posthog";
 import { auth } from "@/auth";
 import CardView from "@/components/CardView";
 import CoffeeSVG from "@/components/Coffee";
@@ -13,7 +12,6 @@ import { Suspense } from "react";
 const londrina = Londrina_Solid({ weight: "400", subsets: ["latin"] });
 
 export default async function CardPage() {
-  const posthog = PosthogClient();
   const session = await auth();
   const email = session?.user.email;
   const supabase = await createClient();
@@ -23,24 +21,6 @@ export default async function CardPage() {
     .eq("email", email)
     .maybeSingle();
   const { coffees, name } = user;
-
-  // posthog.capture({
-  //   distinctId: email!,
-  //   event: "$pageview",
-  //   properties: {
-  //     coffees,
-  //     name,
-  //   },
-  // });
-
-  // posthog.identify({
-  //   distinctId: email!,
-  //   properties: {
-  //     email,
-  //     name,
-  //     coffees,
-  //   },
-  // });
 
   return (
     <>

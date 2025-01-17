@@ -1,26 +1,13 @@
-"use client";
+import posthog from "posthog-js";
 
-import { usePathname, useSearchParams } from "next/navigation";
-import { useEffect } from "react";
-import { usePostHog } from "posthog-js/react";
-
-export default function CardView({ email }: { email: string }) {
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
-  const posthog = usePostHog();
-  useEffect(() => {
-    // Track pageviews
-    if (pathname && posthog) {
-      let url = window.origin + pathname;
-      if (searchParams.toString()) {
-        url = url + `?${searchParams.toString()}`;
-      }
-      posthog.capture("$pageview", {
-        $current_url: url,
-      });
-      posthog.capture("$identify");
-    }
-  }, [pathname, searchParams, posthog]);
-
+const CardView = ({ email }: { email: string }) => {
+  posthog.init(process.env.NEXT_PUBLIC_POSTHOG_KEY!, {
+    api_host: process.env.NEXT_PUBLIC_POSTHOG_HOST,
+    capture_pageview: false,
+    capture_pageleave: false,
+  });
+  posthog.identify(email);
   return null;
-}
+};
+
+export default CardView;
