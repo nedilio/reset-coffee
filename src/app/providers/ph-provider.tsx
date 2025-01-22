@@ -7,6 +7,7 @@ if (typeof window !== "undefined") {
     api_host:
       "https://reset-coffee-git-develop-nedilios-projects.vercel.app/analytics",
     capture_pageview: false,
+
     capture_pageleave: false,
   });
 }
