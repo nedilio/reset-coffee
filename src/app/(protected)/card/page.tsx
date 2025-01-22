@@ -6,7 +6,6 @@ import ResetTitle from "@/components/ResetTitle";
 import { range } from "@/lib";
 import { TABLE_NAME } from "@/lib/constants";
 import { createClient } from "@/supabase-server";
-
 import { Londrina_Solid } from "next/font/google";
 import { Suspense } from "react";
 const londrina = Londrina_Solid({ weight: "400", subsets: ["latin"] });

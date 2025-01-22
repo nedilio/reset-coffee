@@ -4,9 +4,8 @@ import { PostHogProvider } from "posthog-js/react";
 
 if (typeof window !== "undefined") {
   posthog.init(process.env.NEXT_PUBLIC_POSTHOG_KEY!, {
-    // api_host: process.env.NEXT_PUBLIC_POSTHOG_HOST,
     api_host:
-      "https://reset-coffee-git-develop-nedilios-projects.vercel.app/card",
+      "https://reset-coffee-git-develop-nedilios-projects.vercel.app/analytics",
     capture_pageview: false,
     capture_pageleave: false,
   });
