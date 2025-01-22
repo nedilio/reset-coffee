@@ -22,7 +22,7 @@
     "clsx": "^2.1.1",
     "lucide-react": "^0.429.0",
     "next": "15.1.5",
-    "next-auth": "5.0.0-beta.20",
+    "next-auth": "5.0.0-beta.25",
     "posthog-js": "^1.205.0",
     "posthog-node": "^4.3.2",
     "react": "^19.0.0",

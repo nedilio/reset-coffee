@@ -7,11 +7,12 @@ import TableSkeleton from "@/components/TableSkeleton";
 import { countClients } from "@/clients";
 import { Suspense } from "react";
 
-export default async function AdminPage({
-  searchParams,
-}: {
-  searchParams?: { filter: string; page: string };
-}) {
+export default async function AdminPage(
+  props: {
+    searchParams?: Promise<{ filter: string; page: string }>;
+  }
+) {
+  const searchParams = await props.searchParams;
   const filter = searchParams?.filter || "";
   const currentPage = Number(searchParams?.page) || 1;
 
