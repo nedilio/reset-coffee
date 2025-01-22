@@ -7,7 +7,8 @@ const CardView = ({ email }: { email: string }) => {
     capture_pageview: false,
     capture_pageleave: false,
   });
-  posthog.identify(email);
+  posthog.people.set({ email });
+  posthog.capture("card_viewed", { email });
   return null;
 };
 
