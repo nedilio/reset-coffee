@@ -25,7 +25,7 @@ export default async function Navbar() {
             <Link href={`/card`}>
               <Avatar>
                 <AvatarImage src={session.user?.image ?? ""} />
-                <AvatarFallback>RC</AvatarFallback>
+                <AvatarFallback>{session.user.name?.at(0)}</AvatarFallback>
               </Avatar>
             </Link>
 
