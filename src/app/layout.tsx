@@ -11,7 +11,8 @@ const figtree = Figtree({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "The Reset Club | Reset Coffee",
-  description: "por la compra de cada 8 cafés, recibe uno gratis",
+  description:
+    "por la compra de cada 9 cafés, recibe un cappuccino, latte o americano gratis",
 };
 
 export default function RootLayout({

@@ -22,6 +22,7 @@ import { getClients } from "@/clients";
 import CoffeeSVG from "@/components/Coffee";
 import ActionButton from "@/components/ui/ActionButton";
 import { Tables } from "../../database.types";
+import { COFFEES_TO_EXCHANGE } from "@/lib/constants";
 
 interface ClientsTableProps {
   filter?: string;
@@ -54,7 +55,7 @@ const ClientsTable = async ({ currentPage, filter }: ClientsTableProps) => {
                   <input type="hidden" name="coffees" value={coffees} />
                   <ActionButton
                     className="bg-green-800 text-white hover:bg-green-900 hover:text-slate-300"
-                    isDisabled={coffees >= 8}
+                    isDisabled={coffees >= COFFEES_TO_EXCHANGE}
                   >
                     <IconPlus className="size-4" />
                     <CoffeeSVG className="size-5 text-white/90" />
