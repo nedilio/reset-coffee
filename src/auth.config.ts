@@ -4,6 +4,7 @@ import { removeAccents } from "./lib/utils";
 import { TABLE_NAME } from "./lib/constants";
 import { createClient } from "./supabase-server";
 import PostHogClient from "./actions/ph-client";
+import { SupabaseAdapter } from "@auth/supabase-adapter";
 
 const posthog = PostHogClient();
 
@@ -98,4 +99,8 @@ export const authConfig = {
       clientSecret: process.env.AUTH_GOOGLE_SECRET,
     }),
   ],
+  adapter: SupabaseAdapter({
+    url: process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    secret: process.env.SUPABASE_SERVICE_ROLE_KEY!,
+  }),
 } satisfies NextAuthConfig;
