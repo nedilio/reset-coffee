@@ -33,7 +33,7 @@ export type Database = {
       users: {
         Row: {
           coffees: number;
-          email: string | null;
+          email: string;
           emailVerified: string | null;
           id: string;
           image: string | null;
@@ -63,7 +63,7 @@ export type Database = {
       users_develop: {
         Row: {
           coffees: number;
-          email: string | null;
+          email: string;
           emailVerified: string | null;
           id: string;
           image: string | null;
@@ -93,7 +93,7 @@ export type Database = {
       users_test: {
         Row: {
           coffees: number;
-          email: string | null;
+          email: string;
           id: string;
           image: string | null;
           name: string | null;
