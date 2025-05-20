@@ -26,9 +26,9 @@ export default async function CardPage() {
       <Suspense fallback={null}>
         <CardView email={email!} />
       </Suspense>
-      <header className="bg-resetGreen text-white flex flex-col gap-y-4 p-8 w-full">
+      <header className="bg-resetGreen text-white flex flex-col gap-y-4 p-8 w-full max-w-md">
         <ResetTitle />
-        <p className="text-sm">
+        <p className="text-sm text-balance text-center">
           {coffees < COFFEES_TO_EXCHANGE ? (
             <>
               Hola! <span className="font-bold text-sm"> {name}</span>, tienes{" "}
