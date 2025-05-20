@@ -62,3 +62,19 @@ export const getClients = async (currentPage?: number, filter?: string) => {
 
   return clients as Tables<"users">[];
 };
+
+export const getClientByEmail = async (email: string) => {
+  const supabase = await createClient();
+  const { data: client, error } = await supabase
+    .from(TABLE_NAME)
+    .select("*")
+    .eq("email", email)
+    .single();
+
+  if (error) {
+    console.error("Error getting client by email:", error);
+    throw new Error("Failed to get client by email: " + error.message);
+  }
+
+  return client as Tables<"users">;
+};
