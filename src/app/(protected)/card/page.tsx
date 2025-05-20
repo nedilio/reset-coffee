@@ -1,4 +1,5 @@
 import { auth } from "@/auth";
+import { getClientByEmail } from "@/clients";
 import CardView from "@/components/CardView";
 import CoffeeSVG from "@/components/Coffee";
 import Confetti from "@/components/Confetti";
@@ -14,21 +15,20 @@ export default async function CardPage() {
   const session = await auth();
   const email = session?.user.email;
   const supabase = await createClient();
-  const { data: user } = await supabase
-    .from(TABLE_NAME)
-    .select("*")
-    .eq("email", email)
-    .maybeSingle();
-  const { coffees, name } = user;
+
+  if (!email) {
+    return null;
+  }
+  const { coffees, name } = await getClientByEmail(email);
 
   return (
     <>
       <Suspense fallback={null}>
         <CardView email={email!} />
       </Suspense>
-      <header className="bg-resetGreen text-white flex flex-col gap-y-4 p-8 w-full">
+      <header className="bg-resetGreen text-white flex flex-col gap-y-4 p-8 w-full max-w-md">
         <ResetTitle />
-        <p className="text-sm">
+        <p className="text-sm text-balance text-center">
           {coffees < COFFEES_TO_EXCHANGE ? (
             <>
               Hola! <span className="font-bold text-sm"> {name}</span>, tienes{" "}
