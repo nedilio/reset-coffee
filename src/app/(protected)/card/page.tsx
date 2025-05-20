@@ -1,4 +1,5 @@
 import { auth } from "@/auth";
+import { getClientByEmail } from "@/clients";
 import CardView from "@/components/CardView";
 import CoffeeSVG from "@/components/Coffee";
 import Confetti from "@/components/Confetti";
@@ -14,12 +15,11 @@ export default async function CardPage() {
   const session = await auth();
   const email = session?.user.email;
   const supabase = await createClient();
-  const { data: user } = await supabase
-    .from(TABLE_NAME)
-    .select("*")
-    .eq("email", email)
-    .maybeSingle();
-  const { coffees, name } = user;
+
+  if (!email) {
+    return null;
+  }
+  const { coffees, name } = await getClientByEmail(email);
 
   return (
     <>
