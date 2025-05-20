@@ -3,26 +3,31 @@ import { CLIENTS_PER_PAGE, TABLE_NAME } from "./lib/constants";
 import { createClient } from "@/supabase-server";
 
 const createBaseQuery = async (
-  supabase: ReturnType<typeof createClient>,
-  filter?: string,
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  filter: string = "",
   isCountQuery: boolean = false
 ) => {
-  let query = supabase.from(TABLE_NAME);
+  const query = supabase.from(TABLE_NAME);
   if (isCountQuery) {
-    query = query.select("*", { count: "exact", head: true });
+    query
+      .select("*", { count: "exact", head: true })
+      .neq("role", "admin")
+      .ilike("name", `%${filter}%`);
+    return query;
   } else {
-    query = query.select("*");
+    query.select("*").neq("role", "admin").ilike("name", `%${filter}%`);
+    return query;
   }
-  query = query.neq("role", "admin");
-  if (filter) {
-    query = query.ilike("name", `%${filter}%`);
-  }
-  return query;
 };
 
 export const countClients = async (filter: string) => {
   const supabase = await createClient();
-  const query = await createBaseQuery(supabase, filter, true);
+  // const query = await createBaseQuery(supabase, filter, true);
+  const query = supabase
+    .from(TABLE_NAME)
+    .select("*", { count: "exact", head: true })
+    .neq("role", "admin")
+    .ilike("name", `%${filter}%`);
 
   const { count, error } = await query;
   if (error) {
@@ -34,14 +39,18 @@ export const countClients = async (filter: string) => {
 
 export const getClients = async (currentPage?: number, filter?: string) => {
   const supabase = await createClient();
-  let query = await createBaseQuery(supabase, filter, false);
+  const query = supabase
+    .from(TABLE_NAME)
+    .select("*")
+    .neq("role", "admin")
+    .ilike("name", `%${filter}%`);
 
-  query = query.order("name");
+  query.order("name");
 
   if (currentPage) {
     const start = (currentPage - 1) * CLIENTS_PER_PAGE;
     const end = currentPage * CLIENTS_PER_PAGE - 1;
-    query = query.range(start, end);
+    query.range(start, end);
   }
 
   const { data: clients, error } = await query;
