@@ -5,8 +5,7 @@ import CoffeeSVG from "@/components/Coffee";
 import Confetti from "@/components/Confetti";
 import ResetTitle from "@/components/ResetTitle";
 import { range } from "@/lib";
-import { COFFEES_TO_EXCHANGE, TABLE_NAME } from "@/lib/constants";
-import { createClient } from "@/supabase-server";
+import { COFFEES_TO_EXCHANGE } from "@/lib/constants";
 import { Londrina_Solid } from "next/font/google";
 import { Suspense } from "react";
 const londrina = Londrina_Solid({ weight: "400", subsets: ["latin"] });
@@ -14,7 +13,6 @@ const londrina = Londrina_Solid({ weight: "400", subsets: ["latin"] });
 export default async function CardPage() {
   const session = await auth();
   const email = session?.user.email;
-  const supabase = await createClient();
 
   if (!email) {
     return null;
