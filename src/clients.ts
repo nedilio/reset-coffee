@@ -2,27 +2,8 @@ import { Tables } from "../database.types";
 import { CLIENTS_PER_PAGE, TABLE_NAME } from "./lib/constants";
 import { createClient } from "@/supabase-server";
 
-const createBaseQuery = async (
-  supabase: Awaited<ReturnType<typeof createClient>>,
-  filter: string = "",
-  isCountQuery: boolean = false
-) => {
-  const query = supabase.from(TABLE_NAME);
-  if (isCountQuery) {
-    query
-      .select("*", { count: "exact", head: true })
-      .neq("role", "admin")
-      .ilike("name", `%${filter}%`);
-    return query;
-  } else {
-    query.select("*").neq("role", "admin").ilike("name", `%${filter}%`);
-    return query;
-  }
-};
-
 export const countClients = async (filter: string) => {
   const supabase = await createClient();
-  // const query = await createBaseQuery(supabase, filter, true);
   const query = supabase
     .from(TABLE_NAME)
     .select("*", { count: "exact", head: true })
