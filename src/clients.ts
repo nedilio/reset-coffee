@@ -77,6 +77,14 @@ export const provisionClient = async ({
   role,
 }: ProvisionClientInput) => {
   const supabase = await createClient();
+
+  // Needed to tell a first login (signup) from a returning one.
+  const { data: existing } = await supabase
+    .from(TABLE_NAME)
+    .select("id")
+    .eq("email", email)
+    .maybeSingle();
+
   const { data: client, error } = await supabase
     .from(TABLE_NAME)
     .upsert(
@@ -91,5 +99,5 @@ export const provisionClient = async ({
     throw new Error("Failed to provision client: " + error.message);
   }
 
-  return client as Tables<"users">;
+  return { client: client as Tables<"users">, isNew: !existing };
 };
