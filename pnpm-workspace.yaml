@@ -1,0 +1,4 @@
+allowBuilds:
+  '@vercel/speed-insights': false
+  core-js: false
+  sharp: true
