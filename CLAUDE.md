@@ -9,6 +9,7 @@ Package manager is pnpm (`pnpm-lock.yaml`).
 - `pnpm dev` — start dev server (http://localhost:3000)
 - `pnpm build` / `pnpm start` — production build / serve
 - `pnpm lint` — `next lint`
+- `pnpm typecheck` — `tsc --noEmit`
 
 There is no test suite configured.
 
