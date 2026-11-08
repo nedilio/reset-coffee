@@ -36,6 +36,10 @@ export const authConfig = {
         return Response.redirect(new URL(`/`, nextUrl)); // Redirect unauthenticated users to login page
       }
 
+      if (isAdminPage && isLoggedIn && !isAdmin) {
+        return Response.redirect(new URL("/card", nextUrl)); // Non-admins can't see the admin page
+      }
+
       if (isOnLogin && isLoggedIn) {
         return Response.redirect(new URL("/card", nextUrl)); // Redirect authenticated users to home page
       }

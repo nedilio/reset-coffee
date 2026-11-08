@@ -5,6 +5,7 @@ import Search from "@/components/Search";
 import TableSkeleton from "@/components/TableSkeleton";
 
 import { countClients } from "@/clients";
+import { redirect } from "next/navigation";
 import { Suspense } from "react";
 
 export default async function AdminPage(
@@ -18,7 +19,7 @@ export default async function AdminPage(
 
   const session = await auth();
   if (session?.user.role !== "admin") {
-    return <div>Unauthorized</div>;
+    redirect("/card");
   }
   const count = (await countClients(filter)) ?? 1;
 
