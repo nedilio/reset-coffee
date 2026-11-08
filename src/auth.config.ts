@@ -1,10 +1,8 @@
 import type { NextAuthConfig } from "next-auth";
 import Google from "next-auth/providers/google";
 import { provisionClient } from "./clients";
-import PostHogClient from "./actions/ph-client";
+import { captureServerEvent } from "./actions/ph-client";
 import { SupabaseAdapter } from "@auth/supabase-adapter";
-
-const posthog = PostHogClient();
 
 const adminEmails = [
   "izquierdonelson@gmail.com",
@@ -72,7 +70,7 @@ export const authConfig = {
           console.error("Failed to provision client on sign in:", error);
         }
       }
-      posthog.capture({
+      captureServerEvent({
         distinctId: email!,
         event: "login",
       });

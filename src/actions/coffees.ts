@@ -3,14 +3,12 @@ import { COFFEES_TO_EXCHANGE, TABLE_NAME } from "@/lib/constants";
 import { createClient } from "@/supabase-server";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import PostHogClient from "./ph-client";
+import { captureServerEvent } from "./ph-client";
 import { isAdmin, UNAUTHORIZED } from "@/lib/auth-guards";
 
 export const addCoffee = async (formData: FormData) => {
   if (!(await isAdmin())) return UNAUTHORIZED;
   const supabase = await createClient();
-  const posthog = PostHogClient();
-
   const id = formData.get("id") as string;
 
   // Never trust the count sent by the browser: read the current value from the DB.
@@ -42,7 +40,7 @@ export const addCoffee = async (formData: FormData) => {
     return { error: "Failed to add coffee." };
   }
 
-  posthog.capture({
+  captureServerEvent({
     distinctId: client.email!,
     event: "coffee_added",
     properties: { coffees: newCount },
