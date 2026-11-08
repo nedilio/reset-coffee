@@ -45,6 +45,9 @@ export const addCoffee = async (formData: FormData) => {
     event: "coffee_added",
     properties: { coffees: newCount },
   });
+  if (newCount === COFFEES_TO_EXCHANGE) {
+    captureServerEvent({ distinctId: client.email!, event: "reward_earned" });
+  }
 
   revalidatePath("/admin");
 };
@@ -54,6 +57,13 @@ export const resetCoffee = async (FormData: FormData) => {
   const supabase = await createClient();
 
   const id = FormData.get("id") as string;
+  // Needed to tell a redeemed reward from a manual correction (analytics only).
+  const { data: before } = await supabase
+    .from(TABLE_NAME)
+    .select("email, coffees")
+    .eq("id", id)
+    .maybeSingle();
+
   // supabase-js returns errors instead of throwing, so they must be read from the result.
   const { error } = await supabase
     .from(TABLE_NAME)
@@ -65,6 +75,17 @@ export const resetCoffee = async (FormData: FormData) => {
     return { error: "Failed to reset coffee." };
   }
 
+  if (before?.email) {
+    captureServerEvent({
+      distinctId: before.email,
+      event:
+        before.coffees >= COFFEES_TO_EXCHANGE
+          ? "reward_redeemed"
+          : "coffee_reset",
+      properties: { coffees_before: before.coffees },
+    });
+  }
+
   revalidatePath("/admin");
 };
 
@@ -73,11 +94,24 @@ export const deleteCoffee = async (FormData: FormData) => {
   const supabase = await createClient();
 
   const id = FormData.get("id") as string;
-  const { error } = await supabase.from(TABLE_NAME).delete().eq("id", id);
+  const { data: deleted, error } = await supabase
+    .from(TABLE_NAME)
+    .delete()
+    .eq("id", id)
+    .select("email, coffees");
 
   if (error) {
     console.error("Error deleting coffee:", error);
     return { error: "Failed to delete coffee." };
+  }
+
+  const removed = deleted?.[0];
+  if (removed?.email) {
+    captureServerEvent({
+      distinctId: removed.email,
+      event: "client_deleted",
+      properties: { coffees: removed.coffees },
+    });
   }
 
   revalidatePath("/admin");
