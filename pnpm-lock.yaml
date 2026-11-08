@@ -20,9 +20,6 @@ importers:
       '@radix-ui/react-slot':
         specifier: ^1.1.0
         version: 1.1.0(@types/react@18.3.4)(react@19.0.0)
-      '@supabase/ssr':
-        specifier: 0.5.2
-        version: 0.5.2(@supabase/supabase-js@2.45.1)
       '@supabase/supabase-js':
         specifier: ^2.45.1
         version: 2.45.1
@@ -633,11 +630,6 @@ packages:
 
   '@supabase/realtime-js@2.10.2':
     resolution: {integrity: sha512-qyCQaNg90HmJstsvr2aJNxK2zgoKh9ZZA8oqb7UT2LCh3mj9zpa3Iwu167AuyNxsxrUE8eEJ2yH6wLCij4EApA==}
-
-  '@supabase/ssr@0.5.2':
-    resolution: {integrity: sha512-n3plRhr2Bs8Xun1o4S3k1CDv17iH5QY9YcoEvXX3bxV1/5XSasA0mNXYycFmADIdtdE6BG9MRjP5CGIs8qxC8A==}
-    peerDependencies:
-      '@supabase/supabase-js': ^2.43.4
 
   '@supabase/storage-js@2.6.0':
     resolution: {integrity: sha512-REAxr7myf+3utMkI2oOmZ6sdplMZZ71/2NEIEMBZHL9Fkmm3/JnaOZVSRqvG4LStYj2v5WhCruCzuMn6oD/Drw==}
@@ -2804,12 +2796,6 @@ snapshots:
     transitivePeerDependencies:
       - bufferutil
       - utf-8-validate
-
-  '@supabase/ssr@0.5.2(@supabase/supabase-js@2.45.1)':
-    dependencies:
-      '@supabase/supabase-js': 2.45.1
-      '@types/cookie': 0.6.0
-      cookie: 0.7.1
 
   '@supabase/storage-js@2.6.0':
     dependencies:
