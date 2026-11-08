@@ -1,4 +1,5 @@
 import { PostHog } from "posthog-node";
+import { after } from "next/server";
 
 // One PostHog project is shared by every environment, so each event carries an
 // `environment` property (production | preview | development). Filter dashboards on
@@ -29,4 +30,14 @@ export function captureServerEvent({
     event,
     properties: { ...properties, environment: APP_ENV },
   });
+
+  // On Vercel the function is frozen as soon as the response is sent, so a fire-and-forget
+  // send never leaves. after() keeps it alive until the flush finishes without delaying the
+  // user. Outside a request scope it throws; then just flush in the background.
+  const flush = () => client.shutdown();
+  try {
+    after(flush);
+  } catch {
+    void flush();
+  }
 }
