@@ -57,14 +57,10 @@ export const authConfig = {
     // Runs once per login: this is where the client row is created/refreshed.
     signIn: async ({ user }) => {
       const { email, name, image } = user;
+      const role = adminEmails.includes(email ?? "") ? "admin" : "user";
       if (email) {
         try {
-          await provisionClient({
-            email,
-            name,
-            image,
-            role: adminEmails.includes(email) ? "admin" : "user",
-          });
+          await provisionClient({ email, name, image, role });
         } catch (error) {
           // Don't block the login; the card page re-creates the row if it is missing.
           console.error("Failed to provision client on sign in:", error);
@@ -73,6 +69,7 @@ export const authConfig = {
       captureServerEvent({
         distinctId: email!,
         event: "login",
+        properties: { role },
       });
       return true;
     },
