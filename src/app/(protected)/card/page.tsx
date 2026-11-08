@@ -1,5 +1,5 @@
 import { auth } from "@/auth";
-import { getClientByEmail } from "@/clients";
+import { getClientByEmail, provisionClient } from "@/clients";
 import CardView from "@/components/CardView";
 import CoffeeSVG from "@/components/Coffee";
 import Confetti from "@/components/Confetti";
@@ -17,7 +17,16 @@ export default async function CardPage() {
   if (!email) {
     return null;
   }
-  const { coffees, name } = await getClientByEmail(email);
+  // The row can be missing if an admin deleted the client while their session was still valid.
+  const client =
+    (await getClientByEmail(email)) ??
+    (await provisionClient({
+      email,
+      name: session.user.name,
+      image: session.user.image,
+      role: session.user.role,
+    }));
+  const { coffees, name } = client;
 
   return (
     <>

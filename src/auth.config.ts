@@ -1,8 +1,6 @@
 import type { NextAuthConfig } from "next-auth";
 import Google from "next-auth/providers/google";
-import { removeAccents } from "./lib/utils";
-import { TABLE_NAME } from "./lib/constants";
-import { createClient } from "./supabase-server";
+import { provisionClient } from "./clients";
 import PostHogClient from "./actions/ph-client";
 import { SupabaseAdapter } from "@auth/supabase-adapter";
 
@@ -51,44 +49,29 @@ export const authConfig = {
       }
       return true;
     },
+    // Runs on every auth() call (pages, navbar, middleware): keep it free of DB access.
     session: async ({ session }) => {
-      const role = adminEmails.includes(session.user.email) ? "admin" : "user";
-      session.user.role = role;
-      const { email, name, image } = session.user;
-      const normalizedName = removeAccents(name ?? "");
-      const supabase = await createClient();
-
-      const { data, error } = await supabase
-        .from(TABLE_NAME)
-        .select()
-        .eq("email", session.user.email);
-
-      if (data && data.length === 0) {
-        await supabase.from(TABLE_NAME).upsert({
-          email,
-          name: normalizedName,
-          image,
-          emailVerified: session.expires,
-          role,
-        });
-      } else {
-        await supabase
-          .from(TABLE_NAME)
-          .update({
-            name: normalizedName,
-            image,
-            emailVerified: session.expires,
-            role,
-          })
-          .eq("email", session.user.email);
-      }
-      if (error) {
-        console.error(error);
-      }
+      session.user.role = adminEmails.includes(session.user.email)
+        ? "admin"
+        : "user";
       return session;
     },
+    // Runs once per login: this is where the client row is created/refreshed.
     signIn: async ({ user }) => {
-      const { email } = user;
+      const { email, name, image } = user;
+      if (email) {
+        try {
+          await provisionClient({
+            email,
+            name,
+            image,
+            role: adminEmails.includes(email) ? "admin" : "user",
+          });
+        } catch (error) {
+          // Don't block the login; the card page re-creates the row if it is missing.
+          console.error("Failed to provision client on sign in:", error);
+        }
+      }
       posthog.capture({
         distinctId: email!,
         event: "login",
