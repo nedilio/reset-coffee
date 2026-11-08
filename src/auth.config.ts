@@ -58,13 +58,21 @@ export const authConfig = {
     signIn: async ({ user }) => {
       const { email, name, image } = user;
       const role = adminEmails.includes(email ?? "") ? "admin" : "user";
+      let isNew = false;
       if (email) {
         try {
-          await provisionClient({ email, name, image, role });
+          ({ isNew } = await provisionClient({ email, name, image, role }));
         } catch (error) {
           // Don't block the login; the card page re-creates the row if it is missing.
           console.error("Failed to provision client on sign in:", error);
         }
+      }
+      if (isNew) {
+        captureServerEvent({
+          distinctId: email!,
+          event: "signup",
+          properties: { role },
+        });
       }
       captureServerEvent({
         distinctId: email!,

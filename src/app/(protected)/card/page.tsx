@@ -20,12 +20,14 @@ export default async function CardPage() {
   // The row can be missing if an admin deleted the client while their session was still valid.
   const client =
     (await getClientByEmail(email)) ??
-    (await provisionClient({
-      email,
-      name: session.user.name,
-      image: session.user.image,
-      role: session.user.role,
-    }));
+    (
+      await provisionClient({
+        email,
+        name: session.user.name,
+        image: session.user.image,
+        role: session.user.role,
+      })
+    ).client;
   const { coffees, name } = client;
 
   return (
