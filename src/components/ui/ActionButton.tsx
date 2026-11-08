@@ -18,14 +18,22 @@ export default function ActionButton(props: ActionButtonProps) {
     <Button
       {...rest}
       aria-disabled={pending || isDisabled}
-      disabled={pending || props.isDisabled}
+      disabled={pending || isDisabled}
       className={cn(
-        "disabled:opacity-50 flex items-center justify-center gap-2 transition-opacity duration-200",
-        props.className
+        "relative disabled:opacity-50 flex items-center justify-center gap-2 transition-opacity duration-200",
+        className
       )}
     >
-      <div className="flex ">{props.children}</div>
-      {pending && <ButtonSpinner />}
+      {/* Content stays in the layout (hidden while pending) and the spinner floats on top,
+          so the button never changes size and nothing around it shifts. */}
+      <div className={cn("flex items-center", pending && "invisible")}>
+        {children}
+      </div>
+      {pending && (
+        <span className="absolute inset-0 flex items-center justify-center">
+          <ButtonSpinner />
+        </span>
+      )}
     </Button>
   );
 }
