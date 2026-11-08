@@ -1,6 +1,6 @@
 const Footer = () => {
   return (
-    <footer className="text-xs font-semibold flex flex-col justify-center items-center gap-y-3">
+    <footer className="text-xs font-semibold flex flex-col justify-center items-center gap-y-1.5 sm:gap-y-3">
       <FooterLink
         link="https://www.instagram.com/resetcoffeechile?igsh=MWh0eG1iOXBvM2F4Zw=="
         text="@resetcoffeechile"

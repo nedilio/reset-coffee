@@ -23,7 +23,7 @@ export default function RootLayout({
     <html lang="es">
       <PhProvider>
         <body className={figtree.className}>
-          <main className="flex min-h-dvh flex-col items-center justify-between p-8 gap-3">
+          <main className="flex min-h-dvh flex-col items-center justify-between gap-3 p-4 sm:p-8">
             <Analytics />
             <SpeedInsights />
             {children}
