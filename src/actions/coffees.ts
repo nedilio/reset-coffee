@@ -5,8 +5,10 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { TablesUpdate } from "../../database.types";
 import PostHogClient from "./ph-client";
+import { isAdmin, UNAUTHORIZED } from "@/lib/auth-guards";
 
 export const addCoffee = async (formData: FormData) => {
+  if (!(await isAdmin())) return UNAUTHORIZED;
   const supabase = await createClient();
   const posthog = PostHogClient();
 
@@ -30,6 +32,7 @@ export const addCoffee = async (formData: FormData) => {
 };
 
 export const resetCoffee = async (FormData: FormData) => {
+  if (!(await isAdmin())) return UNAUTHORIZED;
   const supabase = await createClient();
 
   const id = FormData.get("id") as string;
@@ -44,6 +47,7 @@ export const resetCoffee = async (FormData: FormData) => {
 };
 
 export const deleteCoffee = async (FormData: FormData) => {
+  if (!(await isAdmin())) return UNAUTHORIZED;
   const supabase = await createClient();
 
   const id = FormData.get("id") as string;
