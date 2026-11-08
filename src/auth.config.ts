@@ -4,12 +4,12 @@ import { provisionClient } from "./clients";
 import { captureServerEvent } from "./actions/ph-client";
 import { SupabaseAdapter } from "@auth/supabase-adapter";
 
-const adminEmails = [
-  "izquierdonelson@gmail.com",
-  "rey.o.brian@gmail.com",
-  "cvap13@gmail.com",
-  "resetcoffeechile@gmail.com",
-];
+// Comma-separated list in ADMIN_EMAILS (set per environment in Vercel / .env files).
+// If it is missing the list is empty, so nobody is admin (fails closed).
+const adminEmails = (process.env.ADMIN_EMAILS ?? "")
+  .split(",")
+  .map((email) => email.trim().toLowerCase())
+  .filter(Boolean);
 
 export const authConfig = {
   pages: {

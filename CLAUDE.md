@@ -22,7 +22,7 @@ Stack: Next.js 15 App Router, React 19, NextAuth v5 beta (Google), Supabase (Pos
 ## Architecture
 
 - **Auth & roles** (`src/auth.config.ts`, `src/auth.ts`, `src/middleware.ts`): all logic lives in `auth.config.ts`.
-  - Admin status is a hardcoded `adminEmails` array — add/remove admins there. Roles are not read from the DB.
+  - Admin status comes from the `ADMIN_EMAILS` env var (comma-separated), parsed into `adminEmails` in `auth.config.ts`; if it is unset nobody is admin. It must exist in every environment (Vercel Production, Preview `develop`, `.env.development.local`); changing admins means editing the var and redeploying. Roles are not read from the DB.
   - The `authorized` callback (run via middleware) handles redirects: logged-in `/` and `/login` → `/card`; admins hitting `/card` → `/admin`; unauthenticated `/admin` or `/card` → `/`.
   - The `session` callback only sets `session.user.role` in memory (it runs on every `auth()` call, so keep it free of DB access). The client row in the users table is created/refreshed once per login in the `signIn` callback via `provisionClient` (`src/clients.ts`); `/card` re-creates it if it is missing (e.g. an admin deleted the client while their session was still valid).
   - Sessions use NextAuth's default database strategy (`next_auth` schema, `@auth/supabase-adapter`), so every `auth()` still costs one adapter query.
@@ -45,4 +45,4 @@ Stack: Next.js 15 App Router, React 19, NextAuth v5 beta (Google), Supabase (Pos
 
 ## Environment
 
-`.env.local` (not committed) is required: Supabase URL/anon key/service role key (`NEXT_PUBLIC_SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`), `AUTH_GOOGLE_ID`/`AUTH_GOOGLE_SECRET`, NextAuth secret, PostHog keys, optional `CLIENTS_TABLE`.
+`.env.local` (not committed) is required: Supabase URL/anon key/service role key (`NEXT_PUBLIC_SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`), `AUTH_GOOGLE_ID`/`AUTH_GOOGLE_SECRET`, NextAuth secret, PostHog keys, `ADMIN_EMAILS`, optional `CLIENTS_TABLE`.
