@@ -8,7 +8,7 @@ Package manager is pnpm (`pnpm-lock.yaml`).
 
 - `pnpm dev` — start dev server (http://localhost:3000)
 - `pnpm build` / `pnpm start` — production build / serve
-- `pnpm lint` — `next lint`
+- `pnpm lint` — `eslint .` (flat config in `eslint.config.mjs`; `next lint` no longer exists in Next 16)
 - `pnpm typecheck` — `tsc --noEmit`
 
 GitHub Actions (`.github/workflows/ci.yml`) runs typecheck and lint on pushes and PRs to `develop` and `main`.
@@ -19,19 +19,19 @@ There is no test suite configured.
 
 A coffee loyalty-card app for Reset Coffee (UI text is in Spanish). Customers sign in with Google and see a card of coffees; after `COFFEES_TO_EXCHANGE` (9, in `src/lib/constants.ts`) the next drink is free. Admins (baristas) search customers and add/reset/delete coffees.
 
-Stack: Next.js 15 App Router, React 19, NextAuth v5 beta (Google), Supabase (Postgres), Tailwind + shadcn-style components (`components.json`, `src/components/ui`), PostHog analytics, deployed on Vercel (region `gru1`). Path alias `@/*` → `src/*`.
+Stack: Next.js 16 App Router (Turbopack), React 19, NextAuth v5 beta (Google), Supabase (Postgres), Tailwind + shadcn-style components (`components.json`, `src/components/ui`), PostHog analytics, deployed on Vercel (region `gru1`). Path alias `@/*` → `src/*`.
 
 ## Architecture
 
-- **Auth & roles** (`src/auth.config.ts`, `src/auth.ts`, `src/middleware.ts`): all logic lives in `auth.config.ts`.
+- **Auth & roles** (`src/auth.config.ts`, `src/auth.ts`, `src/proxy.ts`, Next 16's renamed middleware, which runs on Node.js): all logic lives in `auth.config.ts`.
   - Admin status comes from the `ADMIN_EMAILS` env var (comma-separated), parsed into `adminEmails` in `auth.config.ts`; if it is unset nobody is admin. It must exist in every environment (Vercel Production, Preview `develop`, `.env.development.local`); changing admins means editing the var and redeploying. Roles are not read from the DB.
-  - The `authorized` callback (run via middleware) handles redirects: logged-in `/` and `/login` → `/card`; admins hitting `/card` → `/admin`; unauthenticated `/admin` or `/card` → `/`.
+  - The `authorized` callback (run via the proxy) handles redirects: logged-in `/` and `/login` → `/card`; admins hitting `/card` → `/admin`; unauthenticated `/admin` or `/card` → `/`.
   - The `session` callback only sets `session.user.role` in memory (it runs on every `auth()` call, so keep it free of DB access). The client row in the users table is created/refreshed once per login in the `signIn` callback via `provisionClient` (`src/clients.ts`); `/card` re-creates it if it is missing (e.g. an admin deleted the client while their session was still valid).
   - Sessions use NextAuth's default database strategy (`next_auth` schema, `@auth/supabase-adapter`), so every `auth()` still costs one adapter query.
   - Server actions are public POST endpoints: each admin action must call `isAdmin()` from `src/lib/auth-guards.ts`.
   - `src/app/types/next-auth.d.ts` augments the session with `user.role`.
 - **Data access**: `src/clients.ts` (read queries: `getClients`, which returns the page rows and the total count in one query, and `getClientByEmail`) and `src/actions/coffees.ts` (server actions: `addCoffee`, `removeCoffee`, `resetCoffee`, `deleteCoffee`, which `revalidatePath("/admin")` and return an `ActionResult`). Admin forms submit through `ActionForm` (`src/components/ActionForm.tsx`), which shows `{ error }` as a sonner toast: a plain `<form action>` drops the returned value. Supabase is accessed via `createClient()` in `src/supabase-server.tsx`, a server-only client that uses `SUPABASE_SERVICE_ROLE_KEY` (bypasses RLS). RLS is enabled with no policies on `public.users` and the `next_auth` tables, so the anon key can read and write nothing: never use it for these tables and never import that file from a Client Component. Types come from the generated `database.types.ts` at repo root. The table name comes from `TABLE_NAME` (`CLIENTS_TABLE` env var, default `users`), so use that constant rather than a literal.
-- **Routes**: `src/app/(protected)/card` (customer view; `CardRefresher` re-renders it every 15 s and on tab focus), `(protected)/admin` (admin table with `filter`/`page` search params, `CLIENTS_PER_PAGE` = 10), `login`, `resetqr` (static QR image). The admin page re-checks `session.user.role` server-side in addition to middleware.
+- **Routes**: `src/app/(protected)/card` (customer view; `CardRefresher` re-renders it every 15 s and on tab focus), `(protected)/admin` (admin table with `filter`/`page` search params, `CLIENTS_PER_PAGE` = 10), `login`, `resetqr` (static QR image). The admin page re-checks `session.user.role` server-side in addition to the proxy.
 - **Analytics**: one PostHog project is shared by every environment, so every event carries `environment` (`production` | `preview` | `development`, from `NEXT_PUBLIC_APP_ENV` set in `next.config.mjs`); dashboards must filter on `environment = production`. Browser: `src/app/providers/ph-provider.tsx` (only inits if `NEXT_PUBLIC_POSTHOG_KEY` exists) and `CardView` (`card_viewed` + `identify` by email). Server: `captureServerEvent` in `src/actions/ph-client.ts` for `login`, `signup`, `coffee_added`, `coffee_removed`, `reward_earned`, `reward_redeemed`, `coffee_reset`, `client_deleted`. It flushes with `after()` (Vercel freezes the function after responding) and talks straight to `https://us.i.posthog.com` (override with `POSTHOG_SERVER_HOST`); never use `NEXT_PUBLIC_POSTHOG_HOST` on the server, it is the browser proxy (`/analytics`) and hangs from Vercel until the 10 s timeout.
 
 ## Local database (dev without touching prod)
