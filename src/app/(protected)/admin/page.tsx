@@ -1,12 +1,11 @@
 import { auth } from "@/auth";
 import ClientsTable from "@/components/ClientsTable";
-import TablePagination from "@/components/Pagination";
 import Search from "@/components/Search";
 import TableSkeleton from "@/components/TableSkeleton";
 
-import { countClients } from "@/clients";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
+import { Toaster } from "@/components/ui/sonner";
 
 export default async function AdminPage(
   props: {
@@ -21,7 +20,6 @@ export default async function AdminPage(
   if (session?.user.role !== "admin") {
     redirect("/card");
   }
-  const count = (await countClients(filter)) ?? 1;
 
   return (
     <div className="w-full max-w-[860px] flex-grow">
@@ -30,8 +28,8 @@ export default async function AdminPage(
         <Suspense key={filter + currentPage} fallback={<TableSkeleton />}>
           <ClientsTable filter={filter} currentPage={currentPage} />
         </Suspense>
-        <TablePagination count={count} currentPage={currentPage} />
       </div>
+      <Toaster position="top-center" richColors />
     </div>
   );
 }

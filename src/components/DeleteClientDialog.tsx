@@ -4,6 +4,7 @@ import { IconTrash } from "@tabler/icons-react";
 import { deleteCoffee } from "@/actions/coffees";
 import { Button } from "@/components/ui/button";
 import ActionButton from "@/components/ui/ActionButton";
+import ActionForm from "@/components/ActionForm";
 import {
   Dialog,
   DialogTrigger,
@@ -48,12 +49,12 @@ export default function DeleteClientDialog({
             Esta acción no se puede deshacer. Esto eliminará permanentemente al
             cliente {name} y borrar su progreso.
           </DialogDescription>
-          <form action={deleteCoffee}>
-            <input type="hidden" name="id" value={id} />
+          {/* On success the action redirects; ActionForm only shows the error if it fails. */}
+          <ActionForm action={deleteCoffee} id={id}>
             <ActionButton variant="destructive" type="submit">
               Borrar
             </ActionButton>
-          </form>
+          </ActionForm>
         </DialogHeader>
       </DialogContent>
     </Dialog>

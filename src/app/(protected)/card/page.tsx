@@ -1,6 +1,7 @@
 import { auth } from "@/auth";
 import { getClientByEmail, provisionClient } from "@/clients";
 import CardView from "@/components/CardView";
+import CardRefresher from "@/components/CardRefresher";
 import CoffeeSVG from "@/components/Coffee";
 import Confetti from "@/components/Confetti";
 import ResetTitle from "@/components/ResetTitle";
@@ -36,6 +37,7 @@ export default async function CardPage() {
       <Suspense fallback={null}>
         <CardView email={email!} />
       </Suspense>
+      <CardRefresher />
       <header className="relative w-full max-w-md overflow-hidden rounded-2xl bg-resetGreen p-4 text-white shadow-md sm:p-6">
         {/* Soft decorative circles; purely visual. */}
         <span

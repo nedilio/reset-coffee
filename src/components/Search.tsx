@@ -40,8 +40,8 @@ export default function Search() {
       <Input
         id="filter"
         type="text"
-        aria-label="Buscar por nombre"
-        placeholder="Buscar por nombre…"
+        aria-label="Buscar por nombre o email"
+        placeholder="Buscar por nombre o email…"
         className="h-12 rounded-[10px] border-resetGreen/30 bg-white pl-11 pr-12 text-base focus-visible:ring-resetGreen"
         value={value}
         onChange={(event) => {
