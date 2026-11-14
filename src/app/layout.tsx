@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { Figtree } from "next/font/google";
 import "./globals.css";
 import Footer from "@/components/Footer";
-import Link from "next/link";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { PhProvider } from "@/app/providers/ph-provider";
@@ -24,18 +23,7 @@ export default function RootLayout({
     <html lang="es">
       <PhProvider>
         <body className={figtree.className}>
-          <main className="flex min-h-dvh flex-col items-center justify-between p-8 gap-3">
-            <header>
-              <Link href="/">
-                <img
-                  className="w-52 mx-auto "
-                  width={208}
-                  height={86}
-                  src="/img/reset-coffee-logo.webp"
-                  alt="Reset Cofee"
-                />
-              </Link>
-            </header>
+          <main className="flex min-h-dvh flex-col items-center justify-between gap-3 p-4 sm:p-8">
             <Analytics />
             <SpeedInsights />
             {children}

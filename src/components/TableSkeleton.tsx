@@ -1,34 +1,31 @@
 import { cn } from "@/lib/utils";
-import React from "react";
-import ContentLoader from "react-content-loader";
 
+// Same row height (76px on tablet) as ClientsTable so the card does not jump when data arrives.
 const TableSkeleton = ({ className }: { className?: string }) => (
-  <ContentLoader
-    speed={1}
-    viewBox="0 0 700 400"
-    width={700}
-    height={400}
-    backgroundColor="#f3f3f3"
-    foregroundColor="#ecebeb"
-    className={cn("w-full", className)}
+  <div
+    role="status"
+    aria-label="Cargando clientes"
+    className={cn("animate-pulse", className)}
   >
-    <rect x="32" y="138" rx="0" ry="0" width="0" height="2" />
-    <rect x="187" y="574" rx="0" ry="0" width="14" height="0" />
-    <circle cx="54" cy="63" r="24" />
-    <rect x="116" y="47" rx="0" ry="0" width="500" height="30" />
-    <circle cx="54" cy="126" r="24" />
-    <circle cx="54" cy="185" r="24" />
-    <circle cx="54" cy="243" r="24" />
-    <circle cx="55" cy="305" r="24" />
-    <circle cx="55" cy="365" r="24" />
-    <circle cx="57" cy="431" r="24" />
-    <rect x="116" y="106" rx="0" ry="0" width="500" height="30" />
-    <rect x="116" y="169" rx="0" ry="0" width="500" height="30" />
-    <rect x="116" y="227" rx="0" ry="0" width="500" height="30" />
-    <rect x="116" y="290" rx="0" ry="0" width="500" height="30" />
-    <rect x="116" y="352" rx="0" ry="0" width="500" height="30" />
-    <rect x="116" y="415" rx="0" ry="0" width="500" height="30" />
-  </ContentLoader>
+    <div className="h-11 bg-resetGreen/10" />
+    {Array.from({ length: 6 }, (_, i) => (
+      <div
+        key={i}
+        className="flex min-h-[76px] items-center justify-between gap-4 border-t border-resetGreen/10 px-4"
+      >
+        <div className="space-y-2">
+          <div className="h-4 w-40 rounded bg-resetGreen/10" />
+          <div className="h-3 w-52 rounded bg-resetGreen/10" />
+        </div>
+        <div className="hidden h-3.5 w-40 rounded-full bg-resetGreen/10 sm:block" />
+        <div className="flex gap-2">
+          <div className="size-12 rounded-xl bg-resetGreen/10" />
+          <div className="size-12 rounded-xl bg-resetGreen/10" />
+          <div className="size-12 rounded-xl bg-resetGreen/10" />
+        </div>
+      </div>
+    ))}
+  </div>
 );
 
 export default TableSkeleton;
