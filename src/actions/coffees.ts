@@ -6,28 +6,41 @@ import { redirect } from "next/navigation";
 import { captureServerEvent } from "./ph-client";
 import { isAdmin, UNAUTHORIZED } from "@/lib/auth-guards";
 
-export const addCoffee = async (formData: FormData) => {
-  if (!(await isAdmin())) return UNAUTHORIZED;
-  const supabase = await createClient();
-  const id = formData.get("id") as string;
+// Every action returns this so the admin UI can show the error (or a success toast).
+export type ActionResult = { error: string } | { ok: true; name?: string | null };
 
-  // Never trust the count sent by the browser: read the current value from the DB.
+// Adds (+1) or removes (-1) one coffee. Never trusts a count sent by the browser:
+// reads the current value and updates only if nobody changed it in the meantime.
+type ChangeResult =
+  | { error: string }
+  | {
+      client: { email: string | null; name: string | null; coffees: number };
+      newCount: number;
+    };
+
+const changeCoffees = async (
+  id: string,
+  delta: 1 | -1
+): Promise<ChangeResult> => {
+  const supabase = await createClient();
   const { data: client, error: readError } = await supabase
     .from(TABLE_NAME)
-    .select("email, coffees")
+    .select("email, name, coffees")
     .eq("id", id)
     .maybeSingle();
 
   if (readError || !client) {
-    console.error("Error reading client to add coffee:", readError);
-    return { error: "Client not found." };
+    console.error("Error reading client to change coffees:", readError);
+    return { error: "Cliente no encontrado." };
   }
-  if (client.coffees >= COFFEES_TO_EXCHANGE) {
-    return { error: "Client already has a free coffee." };
+  if (delta === 1 && client.coffees >= COFFEES_TO_EXCHANGE) {
+    return { error: "Este cliente ya tiene su café gratis." };
+  }
+  if (delta === -1 && client.coffees <= 0) {
+    return { error: "Este cliente no tiene cafés." };
   }
 
-  // Compare-and-set: only updates if nobody else changed the count in the meantime.
-  const newCount = client.coffees + 1;
+  const newCount = client.coffees + delta;
   const { data: updated, error: updateError } = await supabase
     .from(TABLE_NAME)
     .update({ coffees: newCount })
@@ -36,9 +49,23 @@ export const addCoffee = async (formData: FormData) => {
     .select("id");
 
   if (updateError || !updated?.length) {
-    console.error("Error adding coffee:", updateError);
-    return { error: "Failed to add coffee." };
+    console.error("Error changing coffees:", updateError);
+    return {
+      error:
+        delta === 1
+          ? "No se pudo sumar el café. Intenta de nuevo."
+          : "No se pudo quitar el café. Intenta de nuevo.",
+    };
   }
+
+  return { client, newCount };
+};
+
+export const addCoffee = async (formData: FormData): Promise<ActionResult> => {
+  if (!(await isAdmin())) return UNAUTHORIZED;
+  const result = await changeCoffees(formData.get("id") as string, 1);
+  if ("error" in result) return result;
+  const { client, newCount } = result;
 
   captureServerEvent({
     distinctId: client.email!,
@@ -50,9 +77,31 @@ export const addCoffee = async (formData: FormData) => {
   }
 
   revalidatePath("/admin");
+  return { ok: true, name: client.name };
 };
 
-export const resetCoffee = async (FormData: FormData) => {
+// Fixes a coffee added by mistake (the "Deshacer" toast and the adjust dialog).
+export const removeCoffee = async (
+  formData: FormData
+): Promise<ActionResult> => {
+  if (!(await isAdmin())) return UNAUTHORIZED;
+  const result = await changeCoffees(formData.get("id") as string, -1);
+  if ("error" in result) return result;
+  const { client, newCount } = result;
+
+  captureServerEvent({
+    distinctId: client.email!,
+    event: "coffee_removed",
+    properties: { coffees: newCount },
+  });
+
+  revalidatePath("/admin");
+  return { ok: true, name: client.name };
+};
+
+export const resetCoffee = async (
+  FormData: FormData
+): Promise<ActionResult> => {
   if (!(await isAdmin())) return UNAUTHORIZED;
   const supabase = await createClient();
 
@@ -72,7 +121,7 @@ export const resetCoffee = async (FormData: FormData) => {
 
   if (error) {
     console.error("Error resetting coffee:", error);
-    return { error: "Failed to reset coffee." };
+    return { error: "No se pudo reiniciar los cafés. Intenta de nuevo." };
   }
 
   if (before?.email) {
@@ -87,9 +136,12 @@ export const resetCoffee = async (FormData: FormData) => {
   }
 
   revalidatePath("/admin");
+  return { ok: true };
 };
 
-export const deleteCoffee = async (FormData: FormData) => {
+export const deleteCoffee = async (
+  FormData: FormData
+): Promise<ActionResult> => {
   if (!(await isAdmin())) return UNAUTHORIZED;
   const supabase = await createClient();
 
@@ -102,7 +154,7 @@ export const deleteCoffee = async (FormData: FormData) => {
 
   if (error) {
     console.error("Error deleting coffee:", error);
-    return { error: "Failed to delete coffee." };
+    return { error: "No se pudo borrar al cliente. Intenta de nuevo." };
   }
 
   const removed = deleted?.[0];

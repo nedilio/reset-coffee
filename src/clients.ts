@@ -3,46 +3,46 @@ import { CLIENTS_PER_PAGE, TABLE_NAME } from "./lib/constants";
 import { createClient } from "@/supabase-server";
 import { removeAccents } from "./lib/utils";
 
-export const countClients = async (filter: string) => {
+const MAX_SEARCH_TERMS = 5;
+
+// Names are stored without accents (see provisionClient), so the filter is normalized the same way.
+// Characters that break PostgREST's or() syntax or act as wildcards are dropped.
+const searchTerms = (filter?: string) =>
+  removeAccents(filter ?? "")
+    .toLowerCase()
+    .replace(/[,()"\\%*:]/g, " ")
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, MAX_SEARCH_TERMS);
+
+interface GetClientsInput {
+  page?: number;
+  filter?: string;
+}
+
+// One query for the page rows and the total count. Every word must appear in the name or the email.
+export const getClients = async ({ page = 1, filter }: GetClientsInput) => {
   const supabase = await createClient();
-  const query = supabase
+  let query = supabase
     .from(TABLE_NAME)
-    .select("*", { count: "exact", head: true })
-    .neq("role", "admin")
-    .ilike("name", `%${filter}%`);
+    .select("*", { count: "exact" })
+    .neq("role", "admin");
 
-  const { count, error } = await query;
-  if (error) {
-    console.error("Error counting clients:", error);
-    throw new Error("Failed to count clients: " + error.message);
-  }
-  return count;
-};
-
-export const getClients = async (currentPage?: number, filter?: string) => {
-  const supabase = await createClient();
-  const query = supabase
-    .from(TABLE_NAME)
-    .select("*")
-    .neq("role", "admin")
-    .ilike("name", `%${filter}%`);
-
-  query.order("name");
-
-  if (currentPage) {
-    const start = (currentPage - 1) * CLIENTS_PER_PAGE;
-    const end = currentPage * CLIENTS_PER_PAGE - 1;
-    query.range(start, end);
+  for (const term of searchTerms(filter)) {
+    query = query.or(`name.ilike.%${term}%,email.ilike.%${term}%`);
   }
 
-  const { data: clients, error } = await query;
+  const start = (page - 1) * CLIENTS_PER_PAGE;
+  const { data, count, error } = await query
+    .order("name")
+    .range(start, start + CLIENTS_PER_PAGE - 1);
 
   if (error) {
     console.error("Error getting clients:", error);
     throw new Error("Failed to get clients: " + error.message);
   }
 
-  return clients as Tables<"users">[];
+  return { clients: data as Tables<"users">[], count: count ?? 0 };
 };
 
 export const getClientByEmail = async (email: string) => {
