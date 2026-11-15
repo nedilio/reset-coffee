@@ -8,7 +8,13 @@ import { renderStrip } from "./strip";
 import { WALLET_COLORS } from "./theme";
 import { passAuthToken, signClientToken } from "./token";
 
-export type PassClient = { id: string; name: string | null; coffees: number };
+export type PassClient = {
+  id: string;
+  name: string | null;
+  coffees: number;
+  // Tells a redeemed reward from a manual reset when the card is back at 0.
+  last_change?: string | null;
+};
 
 const ASSETS = path.join(process.cwd(), "src/lib/wallet/assets");
 const STATIC_FILES = [
@@ -69,16 +75,18 @@ export async function buildPass(client: PassClient): Promise<Buffer> {
           value: `${coffees}/${COFFEES_TO_EXCHANGE}`,
           // Only this field has a changeMessage, so each update shows one notification.
           changeMessage: reward
-            ? "¡Tu café gratis está listo! ☕"
+            ? "¡Tarjeta completa! Café gratis en tu próxima visita ☕"
             : coffees === 0
-              ? "Tarjeta nueva: ¡a juntar sellos!"
+              ? client.last_change === "redeemed"
+                ? "Café gratis canjeado ✅ ¡A juntar sellos de nuevo!"
+                : "Tu tarjeta volvió a 0 sellos"
               : "☕ Llevas %@ cafés",
         },
       ],
       secondaryFields: [{ key: "member", label: "SOCIO", value: name }],
       auxiliaryFields: [
         reward
-          ? { key: "status", label: "PREMIO", value: "Café gratis listo", textAlignment: "PKTextAlignmentRight" }
+          ? { key: "status", label: "PREMIO", value: "Gratis en tu próxima visita", textAlignment: "PKTextAlignmentRight" }
           : {
               key: "status",
               label: "TE FALTAN",
