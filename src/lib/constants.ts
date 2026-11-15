@@ -1,8 +1,5 @@
-import { Database } from "../../database.types";
-
-type TableName = keyof Database["public"]["Tables"];
-
 export const CLIENTS_PER_PAGE = 10;
-export const TABLE_NAME: TableName =
-  (process.env.CLIENTS_TABLE as TableName) || "users";
+// Typed as "users" (the clients table shape) even when CLIENTS_TABLE points elsewhere:
+// typing it as any table name would make every query a union and break the row types.
+export const TABLE_NAME = (process.env.CLIENTS_TABLE || "users") as "users";
 export const COFFEES_TO_EXCHANGE = 9;

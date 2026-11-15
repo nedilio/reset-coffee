@@ -6,6 +6,8 @@ import TableSkeleton from "@/components/TableSkeleton";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { Toaster } from "@/components/ui/sonner";
+import Link from "next/link";
+import { IconScan } from "@tabler/icons-react";
 
 export default async function AdminPage(
   props: {
@@ -23,6 +25,13 @@ export default async function AdminPage(
 
   return (
     <div className="w-full max-w-[860px] flex-grow">
+      <Link
+        href="/admin/scan"
+        className="mb-3 flex h-12 items-center justify-center gap-2 rounded-xl bg-resetGreen font-semibold text-white shadow-sm hover:bg-resetGreen/90 active:scale-[0.99]"
+      >
+        <IconScan className="size-5" aria-hidden="true" />
+        Escanear tarjeta
+      </Link>
       <div className="overflow-hidden rounded-xl border border-resetGreen/15 bg-white shadow-sm">
         <Search />
         <Suspense key={filter + currentPage} fallback={<TableSkeleton />}>

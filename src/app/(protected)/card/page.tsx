@@ -5,6 +5,7 @@ import CardRefresher from "@/components/CardRefresher";
 import CoffeeSVG from "@/components/Coffee";
 import Confetti from "@/components/Confetti";
 import ResetTitle from "@/components/ResetTitle";
+import WalletSection from "@/components/WalletSection";
 import { range } from "@/lib";
 import { COFFEES_TO_EXCHANGE } from "@/lib/constants";
 import { cn } from "@/lib/utils";
@@ -30,7 +31,7 @@ export default async function CardPage() {
         role: session.user.role,
       })
     ).client;
-  const { coffees, name } = client;
+  const { coffees, name, id } = client;
 
   return (
     <>
@@ -128,6 +129,7 @@ export default async function CardPage() {
           </div>
         ))}
       </div>
+      <WalletSection clientId={id} />
     </>
   );
 }

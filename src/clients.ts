@@ -101,3 +101,19 @@ export const provisionClient = async ({
 
   return { client: client as Tables<"users">, isNew: !existing };
 };
+
+export const getClientById = async (id: string) => {
+  const supabase = await createClient();
+  const { data: client, error } = await supabase
+    .from(TABLE_NAME)
+    .select("*")
+    .eq("id", id)
+    .maybeSingle();
+
+  if (error) {
+    console.error("Error getting client by id:", error);
+    throw new Error("Failed to get client by id: " + error.message);
+  }
+
+  return client as Tables<"users"> | null;
+};
