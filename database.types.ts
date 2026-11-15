@@ -16,8 +16,13 @@ export type Database = {
           emailVerified: string | null
           id: string
           image: string | null
+          last_change: string | null
+          last_coffee_at: string | null
           name: string | null
+          reward_earned_at: string | null
+          rewards_redeemed: number
           role: string
+          total_coffees: number
           updated_at: string
         }
         Insert: {
@@ -26,8 +31,13 @@ export type Database = {
           emailVerified?: string | null
           id?: string
           image?: string | null
+          last_change?: string | null
+          last_coffee_at?: string | null
           name?: string | null
+          reward_earned_at?: string | null
+          rewards_redeemed?: number
           role?: string
+          total_coffees?: number
           updated_at?: string
         }
         Update: {
@@ -36,8 +46,13 @@ export type Database = {
           emailVerified?: string | null
           id?: string
           image?: string | null
+          last_change?: string | null
+          last_coffee_at?: string | null
           name?: string | null
+          reward_earned_at?: string | null
+          rewards_redeemed?: number
           role?: string
+          total_coffees?: number
           updated_at?: string
         }
         Relationships: []
