@@ -10,12 +10,17 @@ interface ServerEvent {
   distinctId: string;
   event: string;
   properties?: Record<string, unknown>;
+  // Person properties: `set` overwrites, `setOnce` only fills what is empty.
+  set?: Record<string, unknown>;
+  setOnce?: Record<string, unknown>;
 }
 
 export function captureServerEvent({
   distinctId,
   event,
   properties,
+  set,
+  setOnce,
 }: ServerEvent) {
   const key = process.env.NEXT_PUBLIC_POSTHOG_KEY;
   if (!key) return;
@@ -30,7 +35,12 @@ export function captureServerEvent({
   client.capture({
     distinctId,
     event,
-    properties: { ...properties, environment: APP_ENV },
+    properties: {
+      ...properties,
+      ...(set && { $set: set }),
+      ...(setOnce && { $set_once: setOnce }),
+      environment: APP_ENV,
+    },
   });
 
   // On Vercel the function is frozen as soon as the response is sent, so a fire-and-forget

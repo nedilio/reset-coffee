@@ -7,6 +7,7 @@ import { captureServerEvent } from "./ph-client";
 import { isAdmin, UNAUTHORIZED } from "@/lib/auth-guards";
 import { verifyClientToken } from "@/lib/wallet/token";
 import { notifyPassChanged } from "@/lib/wallet/apns";
+import { currentShop } from "@/lib/shop";
 
 // Every action returns this so the admin UI can show the error (or a success toast).
 export type ActionResult =
@@ -35,6 +36,26 @@ type ClientRow = {
 type ChangeResult =
   | { error: string }
   | { client: ClientRow; newCount: number };
+
+const daysSince = (iso: string | null) =>
+  iso ? Math.floor((Date.now() - Date.parse(iso)) / 86_400_000) : null;
+
+// Every coffee event says which shop it happened in (cookie picked in /admin) and refreshes the
+// person's lifetime stats in PostHog, which is what makes cohorts like "no coffee in 30 days" possible.
+const track = async (
+  email: string | null,
+  event: string,
+  properties: Record<string, unknown>,
+  person?: Record<string, unknown>
+) => {
+  if (!email) return;
+  captureServerEvent({
+    distinctId: email,
+    event,
+    properties: { ...properties, shop: await currentShop() },
+    set: person,
+  });
+};
 
 const CLIENT_COLUMNS =
   "email, name, coffees, total_coffees, rewards_redeemed, last_coffee_at, reward_earned_at, last_change";
@@ -136,13 +157,17 @@ const applyRedeem = async (
     return { error: "No se pudo canjear el café. Intenta de nuevo." };
   }
 
-  if (client.email) {
-    captureServerEvent({
-      distinctId: client.email,
-      event: "reward_redeemed",
-      properties: { source, coffees_before: client.coffees },
-    });
-  }
+  await track(
+    client.email,
+    "reward_redeemed",
+    {
+      source,
+      coffees_before: client.coffees,
+      rewards_redeemed: client.rewards_redeemed + 1,
+      days_since_earned: daysSince(client.reward_earned_at),
+    },
+    { coffees: 0, rewards_redeemed: client.rewards_redeemed + 1 }
+  );
   notifyPassChanged(id);
 
   revalidatePath("/admin");
@@ -158,13 +183,27 @@ const applyCoffeeAdded = async (
   if ("error" in result) return result;
   const { client, newCount } = result;
 
-  captureServerEvent({
-    distinctId: client.email!,
-    event: "coffee_added",
-    properties: { coffees: newCount, source },
-  });
+  const totalCoffees = client.total_coffees + 1;
+  const cycle = client.rewards_redeemed + 1;
+  await track(
+    client.email,
+    "coffee_added",
+    {
+      coffees: newCount,
+      source,
+      total_coffees: totalCoffees,
+      cycle,
+      is_first_coffee: client.total_coffees === 0,
+      days_since_last_coffee: daysSince(client.last_coffee_at),
+    },
+    {
+      coffees: newCount,
+      total_coffees: totalCoffees,
+      last_coffee_at: new Date().toISOString(),
+    }
+  );
   if (newCount === COFFEES_TO_EXCHANGE) {
-    captureServerEvent({ distinctId: client.email!, event: "reward_earned" });
+    await track(client.email, "reward_earned", { cycle, total_coffees: totalCoffees });
   }
   notifyPassChanged(id);
 
@@ -213,11 +252,12 @@ export const removeCoffee = async (
   if ("error" in result) return result;
   const { client, newCount } = result;
 
-  captureServerEvent({
-    distinctId: client.email!,
-    event: "coffee_removed",
-    properties: { coffees: newCount },
-  });
+  await track(
+    client.email,
+    "coffee_removed",
+    { coffees: newCount },
+    { coffees: newCount, total_coffees: Math.max(0, client.total_coffees - 1) }
+  );
   notifyPassChanged(id);
 
   revalidatePath("/admin");
@@ -264,9 +304,12 @@ export const undoRedeem = async (
     return { error: "No se pudo deshacer el canje. Intenta de nuevo." };
   }
 
-  if (client.email) {
-    captureServerEvent({ distinctId: client.email, event: "reward_redeem_undone" });
-  }
+  await track(
+    client.email,
+    "reward_redeem_undone",
+    {},
+    { coffees: COFFEES_TO_EXCHANGE, rewards_redeemed: Math.max(0, client.rewards_redeemed - 1) }
+  );
   notifyPassChanged(id);
 
   revalidatePath("/admin");
@@ -302,13 +345,12 @@ export const resetCoffee = async (
     return { error: "No se pudo reiniciar los cafés. Intenta de nuevo." };
   }
 
-  if (before?.email) {
-    captureServerEvent({
-      distinctId: before.email,
-      event: "coffee_reset",
-      properties: { coffees_before: before.coffees },
-    });
-  }
+  await track(
+    before?.email ?? null,
+    "coffee_reset",
+    { coffees_before: before?.coffees },
+    { coffees: 0 }
+  );
   notifyPassChanged(id);
 
   revalidatePath("/admin");
@@ -334,13 +376,7 @@ export const deleteCoffee = async (
   }
 
   const removed = deleted?.[0];
-  if (removed?.email) {
-    captureServerEvent({
-      distinctId: removed.email,
-      event: "client_deleted",
-      properties: { coffees: removed.coffees },
-    });
-  }
+  await track(removed?.email ?? null, "client_deleted", { coffees: removed?.coffees });
 
   revalidatePath("/admin");
   // redirect() works by throwing, so it must stay outside any try/catch.

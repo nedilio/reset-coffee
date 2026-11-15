@@ -1,4 +1,5 @@
 import { NextRequest } from "next/server";
+import { captureServerEvent } from "@/actions/ph-client";
 import { getClientById } from "@/clients";
 import { TABLE_NAME } from "@/lib/constants";
 import { passTypeId, walletEnabled } from "@/lib/wallet/config";
@@ -23,6 +24,18 @@ const empty = (status: number) => new Response(null, { status });
 const validPass = (passType: string, serial?: string) =>
   passType === passTypeId() && (serial === undefined || UUID.test(serial));
 
+// Wallet funnel events: the web service only knows the serial, so look the customer's email up.
+async function trackWallet(serial: string, event: string, hasPass: boolean) {
+  const client = await getClientById(serial);
+  if (!client?.email) return;
+  captureServerEvent({
+    distinctId: client.email,
+    event,
+    properties: { coffees: client.coffees },
+    set: { has_wallet_pass: hasPass },
+  });
+}
+
 async function register(req: NextRequest, device: string, serial: string) {
   if (!verifyPassAuth(req.headers.get("authorization"), serial)) return empty(401);
   const body = (await req.json().catch(() => null)) as { pushToken?: string } | null;
@@ -45,6 +58,8 @@ async function register(req: NextRequest, device: string, serial: string) {
     console.error("Wallet register error:", error);
     return empty(error.code === "23503" ? 401 : 500);
   }
+  // 201 = first time this device registers the pass, i.e. the customer really added it to Wallet.
+  if (!existing) await trackWallet(serial, "wallet_pass_installed", true);
   return empty(existing ? 200 : 201);
 }
 
@@ -56,6 +71,7 @@ async function unregister(req: NextRequest, device: string, serial: string) {
     .delete()
     .eq("device_library_id", device)
     .eq("serial_number", serial);
+  await trackWallet(serial, "wallet_pass_removed", false);
   return empty(200);
 }
 

@@ -71,13 +71,16 @@ export const authConfig = {
         captureServerEvent({
           distinctId: email!,
           event: "signup",
-          properties: { role },
+          properties: { role, source: "login" },
+          // Person profile: who they are and when they joined (signup date never changes).
+          set: { email, name, role },
+          setOnce: { signup_at: new Date().toISOString() },
         });
       }
       captureServerEvent({
         distinctId: email!,
         event: "login",
-        properties: { role },
+        properties: { role, is_new: isNew },
       });
       return true;
     },

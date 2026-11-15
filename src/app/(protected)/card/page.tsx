@@ -9,6 +9,7 @@ import WalletSection from "@/components/WalletSection";
 import { range } from "@/lib";
 import { COFFEES_TO_EXCHANGE } from "@/lib/constants";
 import { cn } from "@/lib/utils";
+import { captureServerEvent } from "@/actions/ph-client";
 import { Londrina_Solid } from "next/font/google";
 import { Suspense } from "react";
 const londrina = Londrina_Solid({ weight: "400", subsets: ["latin"] });
@@ -21,16 +22,24 @@ export default async function CardPage() {
     return null;
   }
   // The row can be missing if an admin deleted the client while their session was still valid.
-  const client =
-    (await getClientByEmail(email)) ??
-    (
-      await provisionClient({
-        email,
-        name: session.user.name,
-        image: session.user.image,
-        role: session.user.role,
-      })
-    ).client;
+  let client = await getClientByEmail(email);
+  if (!client) {
+    const provisioned = await provisionClient({
+      email,
+      name: session.user.name,
+      image: session.user.image,
+      role: session.user.role,
+    });
+    client = provisioned.client;
+    // A deleted client coming back is a new customer again (new card, new wallet serial).
+    captureServerEvent({
+      distinctId: email,
+      event: "signup",
+      properties: { role: session.user.role, source: "card" },
+      set: { email, name: session.user.name, role: session.user.role },
+      setOnce: { signup_at: new Date().toISOString() },
+    });
+  }
   const { coffees, name, id } = client;
 
   return (
