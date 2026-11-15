@@ -1,4 +1,3 @@
-import { IconWallet } from "@tabler/icons-react";
 import QRCode from "qrcode";
 import { walletEnabled } from "@/lib/wallet/config";
 import { signClientToken } from "@/lib/wallet/token";
@@ -17,12 +16,15 @@ export default async function WalletSection({ clientId }: { clientId: string }) 
     <section className="flex w-full max-w-md flex-col items-center gap-3 pb-4">
       {walletEnabled() && (
         // Plain link (not fetch): Safari hands .pkpass responses straight to Wallet.
-        <a
-          href="/api/wallet/pass"
-          className="flex h-12 items-center gap-2 rounded-xl bg-black px-5 font-semibold text-white shadow-sm active:scale-[0.98]"
-        >
-          <IconWallet className="size-5" aria-hidden="true" />
-          Agregar a Apple Wallet
+        <a href="/api/wallet/pass" className="active:scale-[0.98]">
+          {/* Apple's official badge (es-MX). Its guidelines forbid editing it, so it's used as is. */}
+          <img
+            src="/img/add-to-apple-wallet-es.svg"
+            alt="Agregar a Apple Wallet"
+            width={153}
+            height={48}
+            className="h-12 w-auto"
+          />
         </a>
       )}
       <div className="flex flex-col items-center gap-1">
