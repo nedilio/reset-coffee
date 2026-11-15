@@ -96,7 +96,14 @@ export default function ScanConsole() {
     // Loaded on demand: iOS Safari has no BarcodeDetector, qr-scanner decodes in a worker.
     import("qr-scanner").then(({ default: Scanner }) => {
       if (cancelled || !videoRef.current) return;
-      const scanner = new Scanner(videoRef.current, (r) => submit(r.data), {
+      const scanner = new Scanner(videoRef.current, (r) => {
+        // Close the camera on the first read: it is the instant "got it" signal (the toast only
+        // shows after the server answers) and it stops the same QR from being read again.
+        scanner.stop();
+        setCameraOn(false);
+        navigator.vibrate?.(40);
+        submit(r.data);
+      }, {
         preferredCamera: "environment",
         highlightScanRegion: true,
         maxScansPerSecond: 5,
@@ -165,7 +172,17 @@ export default function ScanConsole() {
         )}
       </div>
 
-      {last && (
+      {pending && (
+        <div
+          className="flex items-center justify-center gap-2 rounded-xl border border-resetGreen/15 bg-white p-5 text-resetGreen shadow-sm"
+          aria-live="polite"
+        >
+          <span className="size-4 animate-spin rounded-full border-2 border-resetGreen border-t-transparent" />
+          Código leído, procesando…
+        </div>
+      )}
+
+      {!pending && last && (
         <div
           className={cn(
             "rounded-xl p-5 text-center text-white shadow-sm",
