@@ -5,7 +5,7 @@ import { IconCamera, IconCameraOff, IconScan } from "@tabler/icons-react";
 import type QrScanner from "qr-scanner";
 import { toast } from "sonner";
 import { addCoffeeByToken } from "@/actions/coffees";
-import { undoCoffee } from "@/components/AddCoffeeButton";
+import { undoCoffee, undoRedemption } from "@/components/AddCoffeeButton";
 import CoffeeSVG from "@/components/Coffee";
 import { COFFEES_TO_EXCHANGE } from "@/lib/constants";
 import { cn } from "@/lib/utils";
@@ -14,7 +14,12 @@ import { cn } from "@/lib/utils";
 // the camera keeps detecting the QR while it is in front of it.
 const REPEAT_WINDOW_MS = 5000;
 
-type Scanned = { id: string; name: string | null; coffees: number };
+type Scanned = {
+  id: string;
+  name: string | null;
+  coffees: number;
+  redeemed: boolean;
+};
 
 export default function ScanConsole() {
   const inputRef = useRef<HTMLInputElement>(null);
@@ -27,8 +32,17 @@ export default function ScanConsole() {
   const [pending, startTransition] = useTransition();
 
   const undo = useCallback(async (scanned: Scanned) => {
-    if (!(await undoCoffee(scanned.id))) return;
-    setLast((cur) => (cur?.id === scanned.id ? { ...cur, coffees: cur.coffees - 1 } : cur));
+    if (!(await (scanned.redeemed ? undoRedemption : undoCoffee)(scanned.id))) return;
+    // Undoing a redemption puts the card back at 9; undoing a coffee removes one.
+    setLast((cur) =>
+      cur?.id === scanned.id
+        ? {
+            ...cur,
+            redeemed: false,
+            coffees: scanned.redeemed ? COFFEES_TO_EXCHANGE : cur.coffees - 1,
+          }
+        : cur
+    );
   }, []);
 
   const submit = useCallback((raw: string) => {
@@ -47,12 +61,22 @@ export default function ScanConsole() {
         setLast(null);
         return;
       }
-      const scanned = { id: result.id!, name: result.name ?? null, coffees: result.coffees ?? 0 };
+      const scanned = {
+        id: result.id!,
+        name: result.name ?? null,
+        coffees: result.coffees ?? 0,
+        redeemed: result.action === "redeemed",
+      };
       setLast(scanned);
-      navigator.vibrate?.(80);
-      toast.success(`Café sumado a ${scanned.name ?? "el cliente"}`, {
-        action: { label: "Deshacer", onClick: () => undo(scanned) },
-      });
+      navigator.vibrate?.(scanned.redeemed ? [80, 60, 80] : 80);
+      toast.success(
+        scanned.redeemed
+          ? `Café gratis canjeado a ${scanned.name ?? "el cliente"}`
+          : `Café sumado a ${scanned.name ?? "el cliente"}`,
+        {
+          action: { label: "Deshacer", onClick: () => undo(scanned) },
+        }
+      );
     });
   }, [undo]);
 
@@ -91,7 +115,8 @@ export default function ScanConsole() {
     };
   }, [cameraOn, submit]);
 
-  const reward = last && last.coffees >= COFFEES_TO_EXCHANGE;
+  // Orange = a free coffee is involved: just redeemed, or the card just got full.
+  const reward = last && (last.redeemed || last.coffees >= COFFEES_TO_EXCHANGE);
 
   return (
     <div className="space-y-3">
@@ -148,7 +173,9 @@ export default function ScanConsole() {
           )}
           aria-live="polite"
         >
-          <p className="text-xs uppercase tracking-wider text-white/70">Café sumado</p>
+          <p className="text-xs uppercase tracking-wider text-white/70">
+            {last.redeemed ? "Café gratis canjeado" : "Café sumado"}
+          </p>
           <p className="mt-1 line-clamp-2 text-2xl font-bold leading-tight">{last.name ?? "Cliente"}</p>
           <div className="mt-3 flex items-center justify-center gap-2">
             <CoffeeSVG className="h-auto w-9 text-white" />
@@ -157,7 +184,13 @@ export default function ScanConsole() {
               <span className="text-xl text-white/70"> / {COFFEES_TO_EXCHANGE}</span>
             </span>
           </div>
-          {reward && <p className="mt-2 font-semibold">¡Completó la tarjeta! Su próximo café es gratis.</p>}
+          {last.redeemed ? (
+            <p className="mt-2 font-semibold">¡Café gratis entregado! La tarjeta vuelve a empezar.</p>
+          ) : (
+            reward && (
+              <p className="mt-2 font-semibold">¡Completó la tarjeta! Su próximo café es gratis.</p>
+            )
+          )}
         </div>
       )}
     </div>

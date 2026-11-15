@@ -16,6 +16,7 @@ import {
   DialogDescription,
   DialogHeader,
 } from "@/components/ui/dialog";
+import { COFFEES_TO_EXCHANGE } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 
 // Client component for the same reason as DeleteClientDialog: the trigger uses `asChild`.
@@ -33,6 +34,7 @@ export default function ResetClientDialog({
   className?: string;
 }) {
   const [open, setOpen] = useState(false);
+  const isFull = coffees >= COFFEES_TO_EXCHANGE;
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -55,8 +57,9 @@ export default function ResetClientDialog({
           <DialogTitle>¿Ajustar los cafés?</DialogTitle>
           <DialogDescription>
             {name} tiene {coffees} {coffees === 1 ? "café" : "cafés"}. Puedes
-            quitar uno sumado por error o reiniciar a 0. Reiniciar no se puede
-            deshacer.
+            quitar uno sumado por error o{" "}
+            {isFull ? "canjear el café gratis (vuelve a 0)" : "reiniciar a 0"}.
+            Esto no se puede deshacer desde aquí.
           </DialogDescription>
           <div className="flex flex-wrap gap-2">
             <DialogClose asChild>
@@ -85,11 +88,15 @@ export default function ResetClientDialog({
               id={id}
               onSuccess={() => {
                 setOpen(false);
-                toast.success(`Cafés de ${name ?? "el cliente"} en 0`);
+                toast.success(
+                  isFull
+                    ? `Café gratis canjeado a ${name ?? "el cliente"}`
+                    : `Cafés de ${name ?? "el cliente"} en 0`
+                );
               }}
             >
               <ActionButton variant="destructive" type="submit">
-                Reiniciar a 0
+                {isFull ? "Canjear café gratis" : "Reiniciar a 0"}
               </ActionButton>
             </ActionForm>
           </div>
