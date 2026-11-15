@@ -8,6 +8,8 @@ import { Suspense } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import Link from "next/link";
 import { IconScan } from "@tabler/icons-react";
+import ShopSelector from "@/components/ShopSelector";
+import { currentShop, shopNames } from "@/lib/shop";
 
 export default async function AdminPage(
   props: {
@@ -25,6 +27,7 @@ export default async function AdminPage(
 
   return (
     <div className="w-full max-w-[860px] flex-grow">
+      <ShopSelector names={shopNames()} current={await currentShop()} />
       <Link
         href="/admin/scan"
         className="mb-3 flex h-12 items-center justify-center gap-2 rounded-xl bg-resetGreen font-semibold text-white shadow-sm hover:bg-resetGreen/90 active:scale-[0.99]"

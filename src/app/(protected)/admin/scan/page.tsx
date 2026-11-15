@@ -4,6 +4,8 @@ import { Toaster } from "@/components/ui/sonner";
 import { IconArrowLeft } from "@tabler/icons-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import ShopSelector from "@/components/ShopSelector";
+import { currentShop, shopNames } from "@/lib/shop";
 
 export default async function ScanPage() {
   const session = await auth();
@@ -20,6 +22,7 @@ export default async function ScanPage() {
         <IconArrowLeft className="size-4" aria-hidden="true" />
         Volver a clientes
       </Link>
+      <ShopSelector names={shopNames()} current={await currentShop()} />
       <ScanConsole />
       <Toaster position="top-center" richColors />
     </div>
