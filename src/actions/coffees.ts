@@ -5,9 +5,13 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { captureServerEvent } from "./ph-client";
 import { isAdmin, UNAUTHORIZED } from "@/lib/auth-guards";
+import { verifyClientToken } from "@/lib/wallet/token";
+import { notifyPassChanged } from "@/lib/wallet/apns";
 
 // Every action returns this so the admin UI can show the error (or a success toast).
-export type ActionResult = { error: string } | { ok: true; name?: string | null };
+export type ActionResult =
+  | { error: string }
+  | { ok: true; name?: string | null; id?: string; coffees?: number };
 
 // Adds (+1) or removes (-1) one coffee. Never trusts a count sent by the browser:
 // reads the current value and updates only if nobody changed it in the meantime.
@@ -61,23 +65,48 @@ const changeCoffees = async (
   return { client, newCount };
 };
 
-export const addCoffee = async (formData: FormData): Promise<ActionResult> => {
-  if (!(await isAdmin())) return UNAUTHORIZED;
-  const result = await changeCoffees(formData.get("id") as string, 1);
+// Shared by the "+1" button and the QR scanner: one place for the update, analytics and push.
+const applyCoffeeAdded = async (
+  id: string,
+  source: "button" | "scan"
+): Promise<ActionResult> => {
+  const result = await changeCoffees(id, 1);
   if ("error" in result) return result;
   const { client, newCount } = result;
 
   captureServerEvent({
     distinctId: client.email!,
     event: "coffee_added",
-    properties: { coffees: newCount },
+    properties: { coffees: newCount, source },
   });
   if (newCount === COFFEES_TO_EXCHANGE) {
     captureServerEvent({ distinctId: client.email!, event: "reward_earned" });
   }
+  notifyPassChanged(id);
 
   revalidatePath("/admin");
-  return { ok: true, name: client.name };
+  return { ok: true, name: client.name, id, coffees: newCount };
+};
+
+export const addCoffee = async (formData: FormData): Promise<ActionResult> => {
+  if (!(await isAdmin())) return UNAUTHORIZED;
+  return applyCoffeeAdded(formData.get("id") as string, "button");
+};
+
+// Called by /admin/scan with whatever the camera or the scanner gun read.
+export const addCoffeeByToken = async (token: string): Promise<ActionResult> => {
+  if (!(await isAdmin())) return UNAUTHORIZED;
+  const id = verifyClientToken(token);
+  if (!id) return { error: "Código no válido. No es una tarjeta de Reset." };
+  const result = await applyCoffeeAdded(id, "scan");
+  // A deleted client that signed in again has a new id, so their old pass points nowhere.
+  if ("error" in result && result.error === "Cliente no encontrado.") {
+    return {
+      error:
+        "Cliente no encontrado. Pídele que vuelva a agregar su tarjeta a Wallet.",
+    };
+  }
+  return result;
 };
 
 // Fixes a coffee added by mistake (the "Deshacer" toast and the adjust dialog).
@@ -85,7 +114,8 @@ export const removeCoffee = async (
   formData: FormData
 ): Promise<ActionResult> => {
   if (!(await isAdmin())) return UNAUTHORIZED;
-  const result = await changeCoffees(formData.get("id") as string, -1);
+  const id = formData.get("id") as string;
+  const result = await changeCoffees(id, -1);
   if ("error" in result) return result;
   const { client, newCount } = result;
 
@@ -94,9 +124,10 @@ export const removeCoffee = async (
     event: "coffee_removed",
     properties: { coffees: newCount },
   });
+  notifyPassChanged(id);
 
   revalidatePath("/admin");
-  return { ok: true, name: client.name };
+  return { ok: true, name: client.name, id, coffees: newCount };
 };
 
 export const resetCoffee = async (
@@ -134,6 +165,7 @@ export const resetCoffee = async (
       properties: { coffees_before: before.coffees },
     });
   }
+  notifyPassChanged(id);
 
   revalidatePath("/admin");
   return { ok: true };

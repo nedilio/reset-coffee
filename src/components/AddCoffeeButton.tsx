@@ -8,12 +8,17 @@ import CoffeeSVG from "@/components/Coffee";
 import ActionButton from "@/components/ui/ActionButton";
 import { cn } from "@/lib/utils";
 
-const undo = async (id: string) => {
+// Also used by /admin/scan after a scanned coffee.
+export const undoCoffee = async (id: string) => {
   const formData = new FormData();
   formData.set("id", id);
   const result = await removeCoffee(formData);
-  if ("error" in result) toast.error(result.error);
-  else toast("Café quitado");
+  if ("error" in result) {
+    toast.error(result.error);
+    return false;
+  }
+  toast("Café quitado");
+  return true;
 };
 
 export default function AddCoffeeButton({
@@ -33,7 +38,7 @@ export default function AddCoffeeButton({
       id={id}
       onSuccess={() =>
         toast.success(`Café sumado a ${name ?? "el cliente"}`, {
-          action: { label: "Deshacer", onClick: () => undo(id) },
+          action: { label: "Deshacer", onClick: () => undoCoffee(id) },
         })
       }
     >
