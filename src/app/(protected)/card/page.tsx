@@ -1,4 +1,5 @@
-import { auth } from "@/auth";
+import { getSession } from "@/lib/auth-session";
+import { redirect } from "next/navigation";
 import { getClientByEmail, provisionClient } from "@/clients";
 import CardView from "@/components/CardView";
 import CardRefresher from "@/components/CardRefresher";
@@ -15,12 +16,12 @@ import { Suspense } from "react";
 const londrina = Londrina_Solid({ weight: "400", subsets: ["latin"] });
 
 export default async function CardPage() {
-  const session = await auth();
-  const email = session?.user.email;
-
-  if (!email) {
-    return null;
-  }
+  const session = await getSession();
+  // A stale cookie gets here without a session; "/" validates for real, so this cannot loop.
+  if (!session) redirect("/");
+  // Baristas have no card.
+  if (session.user.role === "admin") redirect("/admin");
+  const email = session.user.email;
   // The row can be missing if an admin deleted the client while their session was still valid.
   let client = await getClientByEmail(email);
   if (!client) {
@@ -28,15 +29,14 @@ export default async function CardPage() {
       email,
       name: session.user.name,
       image: session.user.image,
-      role: session.user.role,
     });
     client = provisioned.client;
     // A deleted client coming back is a new customer again (new card, new wallet serial).
     captureServerEvent({
       distinctId: email,
       event: "signup",
-      properties: { role: session.user.role, source: "card" },
-      set: { email, name: session.user.name, role: session.user.role },
+      properties: { role: "user", source: "card" },
+      set: { email, name: session.user.name, role: "user" },
       setOnce: { signup_at: new Date().toISOString() },
     });
   }

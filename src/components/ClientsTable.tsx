@@ -3,7 +3,7 @@ import DeleteClientDialog from "@/components/DeleteClientDialog";
 import ResetClientDialog from "@/components/ResetClientDialog";
 import { getClients } from "@/clients";
 import TablePagination from "@/components/Pagination";
-import { Tables } from "../../database.types";
+import type { Client } from "@/clients";
 import { COFFEES_TO_EXCHANGE } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 
@@ -52,7 +52,7 @@ const ClientsTable = async ({ currentPage, filter }: ClientsTableProps) => {
             Acciones
           </span>
         </div>
-        {clients.map(({ id, name, email, coffees }: Tables<"users">) => {
+        {clients.map(({ id, name, email, coffees }: Client) => {
           const isFull = coffees >= COFFEES_TO_EXCHANGE;
           return (
             <div

@@ -1,7 +1,9 @@
 import "server-only";
 import { connect } from "node:http2";
 import { after } from "next/server";
-import { createClient } from "@/supabase-server";
+import { db } from "@/db";
+import { walletRegistrations } from "@/db/schema";
+import { eq, inArray } from "drizzle-orm";
 import { certificates, passTypeId, walletEnabled, webServiceBase } from "./config";
 
 const APNS_HOST = "https://api.push.apple.com";
@@ -59,23 +61,24 @@ function pushAll(tokens: string[]): Promise<{ token: string; status: number }[]>
 }
 
 async function notify(serialNumber: string) {
-  const supabase = await createClient();
-  const { data: rows, error } = await supabase
-    .from("wallet_registrations")
-    .select("push_token")
-    .eq("serial_number", serialNumber);
-  if (error) {
+  let rows: { pushToken: string }[];
+  try {
+    rows = await db
+      .select({ pushToken: walletRegistrations.pushToken })
+      .from(walletRegistrations)
+      .where(eq(walletRegistrations.serialNumber, serialNumber));
+  } catch (error) {
     console.error("Error reading wallet registrations:", error);
     return;
   }
-  const tokens = [...new Set((rows ?? []).map((r) => r.push_token))];
+  const tokens = [...new Set(rows.map((r) => r.pushToken))];
   if (tokens.length === 0) return;
 
   const results = await pushAll(tokens);
   // 410 = the device removed the pass or the token expired: forget it.
   const gone = results.filter((r) => r.status === 410).map((r) => r.token);
   if (gone.length > 0) {
-    await supabase.from("wallet_registrations").delete().in("push_token", gone);
+    await db.delete(walletRegistrations).where(inArray(walletRegistrations.pushToken, gone));
   }
 }
 

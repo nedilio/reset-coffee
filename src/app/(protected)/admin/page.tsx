@@ -1,4 +1,4 @@
-import { auth } from "@/auth";
+import { getSession } from "@/lib/auth-session";
 import ClientsTable from "@/components/ClientsTable";
 import Search from "@/components/Search";
 import TableSkeleton from "@/components/TableSkeleton";
@@ -20,10 +20,9 @@ export default async function AdminPage(
   const filter = searchParams?.filter || "";
   const currentPage = Number(searchParams?.page) || 1;
 
-  const session = await auth();
-  if (session?.user.role !== "admin") {
-    redirect("/card");
-  }
+  const session = await getSession();
+  if (!session) redirect("/");
+  if (session.user.role !== "admin") redirect("/card");
 
   return (
     <div className="w-full max-w-[860px] flex-grow">

@@ -1,4 +1,4 @@
-import { auth } from "@/auth";
+import { getSession } from "@/lib/auth-session";
 import { getClientByEmail } from "@/clients";
 import { walletEnabled } from "@/lib/wallet/config";
 import { captureServerEvent } from "@/actions/ph-client";
@@ -6,7 +6,7 @@ import { buildPass, PKPASS_HEADERS } from "@/lib/wallet/pass";
 
 // "Agregar a Apple Wallet" on /card. /api is outside the proxy matcher, so check the session here.
 export async function GET() {
-  const session = await auth();
+  const session = await getSession();
   const email = session?.user?.email;
   if (!email) return new Response("No autorizado", { status: 401 });
   if (!walletEnabled()) return new Response("Wallet no configurado", { status: 503 });

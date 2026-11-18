@@ -1,6 +1,8 @@
 import Link from "next/link";
-import { auth, signOut } from "@/auth";
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { auth } from "@/lib/auth";
+import { getSession } from "@/lib/auth-session";
 import { Button } from "./ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { IconLogout } from "@tabler/icons-react";
@@ -10,14 +12,14 @@ import NavMenu, { ADMIN_ITEMS, CLIENT_ITEMS } from "@/components/NavMenu";
 
 async function handleLogout() {
   "use server";
-  await signOut();
+  await auth.api.signOut({ headers: await headers() });
   redirect("/");
 }
 
 // One compact row on tablet and desktop. On a phone the tabs wrap to a second row.
 // Sits on the page background (not a white card) because the logo is an opaque image.
 export default async function Navbar() {
-  const session = await auth();
+  const session = await getSession();
   // /resetqr is public: visitors without a session just get the big logo.
   if (!session) return <BrandLogo size="lg" />;
   const isAdmin = session.user.role === "admin";

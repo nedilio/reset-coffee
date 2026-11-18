@@ -1,16 +1,20 @@
-import { Tables } from "../database.types";
-import { CLIENTS_PER_PAGE, TABLE_NAME } from "./lib/constants";
-import { createClient } from "@/supabase-server";
+import { and, asc, eq, getTableColumns, ilike, or, sql } from "drizzle-orm";
+import { CLIENTS_PER_PAGE } from "./lib/constants";
+import { db } from "@/db";
+import { clients, type Client } from "@/db/schema";
 import { removeAccents } from "./lib/utils";
+import { isUuid } from "./lib/uuid";
+
+export type { Client };
 
 const MAX_SEARCH_TERMS = 5;
 
 // Names are stored without accents (see provisionClient), so the filter is normalized the same way.
-// Characters that break PostgREST's or() syntax or act as wildcards are dropped.
+// LIKE wildcards typed by the user are escaped so they match literally.
 const searchTerms = (filter?: string) =>
   removeAccents(filter ?? "")
     .toLowerCase()
-    .replace(/[,()"\\%*:]/g, " ")
+    .replace(/[\\%_]/g, "\\$&")
     .split(/\s+/)
     .filter(Boolean)
     .slice(0, MAX_SEARCH_TERMS);
@@ -22,98 +26,61 @@ interface GetClientsInput {
 
 // One query for the page rows and the total count. Every word must appear in the name or the email.
 export const getClients = async ({ page = 1, filter }: GetClientsInput) => {
-  const supabase = await createClient();
-  let query = supabase
-    .from(TABLE_NAME)
-    .select("*", { count: "exact" })
-    .neq("role", "admin");
+  const where = and(
+    ...searchTerms(filter).map((term) =>
+      or(ilike(clients.name, `%${term}%`), ilike(clients.email, `%${term}%`))
+    )
+  );
 
-  for (const term of searchTerms(filter)) {
-    query = query.or(`name.ilike.%${term}%,email.ilike.%${term}%`);
+  const rows = await db
+    .select({ client: clients, total: sql<number>`count(*) over()`.mapWith(Number) })
+    .from(clients)
+    .where(where)
+    .orderBy(asc(clients.name))
+    .limit(CLIENTS_PER_PAGE)
+    .offset((page - 1) * CLIENTS_PER_PAGE);
+
+  if (rows.length > 0) {
+    return { clients: rows.map((r) => r.client), count: rows[0].total };
   }
-
-  const start = (page - 1) * CLIENTS_PER_PAGE;
-  const { data, count, error } = await query
-    .order("name")
-    .range(start, start + CLIENTS_PER_PAGE - 1);
-
-  if (error) {
-    console.error("Error getting clients:", error);
-    throw new Error("Failed to get clients: " + error.message);
-  }
-
-  return { clients: data as Tables<"users">[], count: count ?? 0 };
+  // An empty page can still have matches (page beyond the last one): ask for the real total.
+  const [{ count }] = await db
+    .select({ count: sql<number>`count(*)`.mapWith(Number) })
+    .from(clients)
+    .where(where);
+  return { clients: [] as Client[], count };
 };
 
 export const getClientByEmail = async (email: string) => {
-  const supabase = await createClient();
-  const { data: client, error } = await supabase
-    .from(TABLE_NAME)
-    .select("*")
-    .eq("email", email)
-    .maybeSingle();
+  const [client] = await db.select().from(clients).where(eq(clients.email, email));
+  return client ?? null;
+};
 
-  if (error) {
-    console.error("Error getting client by email:", error);
-    throw new Error("Failed to get client by email: " + error.message);
-  }
-
-  return client as Tables<"users"> | null;
+export const getClientById = async (id: string) => {
+  if (!isUuid(id)) return null;
+  const [client] = await db.select().from(clients).where(eq(clients.id, id));
+  return client ?? null;
 };
 
 interface ProvisionClientInput {
   email: string;
   name?: string | null;
   image?: string | null;
-  role: string;
 }
 
 // Creates the client row on first login and refreshes profile data on later logins.
-// `coffees` is not part of the payload, so an existing count is never overwritten.
-export const provisionClient = async ({
-  email,
-  name,
-  image,
-  role,
-}: ProvisionClientInput) => {
-  const supabase = await createClient();
+// Counters are not part of the payload, so an existing count is never overwritten.
+export const provisionClient = async ({ email, name, image }: ProvisionClientInput) => {
+  const [row] = await db
+    .insert(clients)
+    .values({ email, name: removeAccents(name ?? ""), image })
+    .onConflictDoUpdate({
+      target: clients.email,
+      set: { name: removeAccents(name ?? ""), image },
+    })
+    // xmax is 0 only on rows this statement inserted, which tells a signup from a returning login.
+    .returning({ ...getTableColumns(clients), inserted: sql<boolean>`(xmax = 0)` });
 
-  // Needed to tell a first login (signup) from a returning one.
-  const { data: existing } = await supabase
-    .from(TABLE_NAME)
-    .select("id")
-    .eq("email", email)
-    .maybeSingle();
-
-  const { data: client, error } = await supabase
-    .from(TABLE_NAME)
-    .upsert(
-      { email, name: removeAccents(name ?? ""), image, role },
-      { onConflict: "email" }
-    )
-    .select("*")
-    .single();
-
-  if (error) {
-    console.error("Error provisioning client:", error);
-    throw new Error("Failed to provision client: " + error.message);
-  }
-
-  return { client: client as Tables<"users">, isNew: !existing };
-};
-
-export const getClientById = async (id: string) => {
-  const supabase = await createClient();
-  const { data: client, error } = await supabase
-    .from(TABLE_NAME)
-    .select("*")
-    .eq("id", id)
-    .maybeSingle();
-
-  if (error) {
-    console.error("Error getting client by id:", error);
-    throw new Error("Failed to get client by id: " + error.message);
-  }
-
-  return client as Tables<"users"> | null;
+  const { inserted, ...client } = row;
+  return { client: client as Client, isNew: inserted };
 };

@@ -7,7 +7,7 @@ const REFRESH_MS = 15_000;
 
 // Keeps the card current while the customer looks at it (the barista adds the coffee
 // from another device). Re-renders the server page on return to the tab and every 15 s
-// while visible. No Supabase Realtime: it would need the anon key, which sees nothing.
+// while visible.
 export default function CardRefresher() {
   const router = useRouter();
 

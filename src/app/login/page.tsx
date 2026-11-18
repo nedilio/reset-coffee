@@ -1,4 +1,6 @@
-import { signIn } from "@/auth";
+import { auth } from "@/lib/auth";
+import { getSession } from "@/lib/auth-session";
+import { redirect } from "next/navigation";
 import BrandLogo from "@/components/BrandLogo";
 import ClubCard from "@/components/ClubCard";
 import GoogleLogo from "@/components/GoogleLogo";
@@ -9,10 +11,14 @@ import Link from "next/link";
 
 const signInAction = async () => {
   "use server";
-  await signIn("google");
+  const { url } = await auth.api.signInSocial({
+    body: { provider: "google", callbackURL: "/card" },
+  });
+  if (url) redirect(url);
 };
 
 export default async function LoginPage() {
+  if (await getSession()) redirect("/card");
   return (
     <>
       <BrandLogo size="lg" />

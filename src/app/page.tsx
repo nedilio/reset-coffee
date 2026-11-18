@@ -4,6 +4,8 @@ import ResetTitle from "@/components/ResetTitle";
 import { COFFEES_TO_EXCHANGE } from "@/lib/constants";
 import { IconArrowRight } from "@tabler/icons-react";
 import Link from "next/link";
+import { redirect } from "next/navigation";
+import { getSession } from "@/lib/auth-session";
 
 const STEPS = [
   "Inicia sesión con Google",
@@ -12,6 +14,7 @@ const STEPS = [
 ];
 
 export default async function Home() {
+  if (await getSession()) redirect("/card");
   return (
     <>
       <BrandLogo size="lg" />

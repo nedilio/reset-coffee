@@ -1,4 +1,4 @@
-import { auth } from "@/auth";
+import { getSession } from "@/lib/auth-session";
 import ScanConsole from "@/components/ScanConsole";
 import { Toaster } from "@/components/ui/sonner";
 import { IconArrowLeft } from "@tabler/icons-react";
@@ -8,10 +8,9 @@ import ShopSelector from "@/components/ShopSelector";
 import { currentShop, shopNames } from "@/lib/shop";
 
 export default async function ScanPage() {
-  const session = await auth();
-  if (session?.user.role !== "admin") {
-    redirect("/card");
-  }
+  const session = await getSession();
+  if (!session) redirect("/");
+  if (session.user.role !== "admin") redirect("/card");
 
   return (
     <div className="w-full max-w-md flex-grow">

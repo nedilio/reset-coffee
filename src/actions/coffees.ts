@@ -1,6 +1,9 @@
 "use server";
-import { COFFEES_TO_EXCHANGE, TABLE_NAME } from "@/lib/constants";
-import { createClient } from "@/supabase-server";
+import { COFFEES_TO_EXCHANGE } from "@/lib/constants";
+import { db } from "@/db";
+import { clients } from "@/db/schema";
+import { and, eq } from "drizzle-orm";
+import { isUuid } from "@/lib/uuid";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { captureServerEvent } from "./ph-client";
@@ -27,11 +30,11 @@ type ClientRow = {
   email: string | null;
   name: string | null;
   coffees: number;
-  total_coffees: number;
-  rewards_redeemed: number;
-  last_coffee_at: string | null;
-  reward_earned_at: string | null;
-  last_change: string | null;
+  totalCoffees: number;
+  rewardsRedeemed: number;
+  lastCoffeeAt: string | null;
+  rewardEarnedAt: string | null;
+  lastChange: string | null;
 };
 type ChangeResult =
   | { error: string }
@@ -57,24 +60,54 @@ const track = async (
   });
 };
 
-const CLIENT_COLUMNS =
-  "email, name, coffees, total_coffees, rewards_redeemed, last_coffee_at, reward_earned_at, last_change";
+const CLIENT_COLUMNS = {
+  email: clients.email,
+  name: clients.name,
+  coffees: clients.coffees,
+  totalCoffees: clients.totalCoffees,
+  rewardsRedeemed: clients.rewardsRedeemed,
+  lastCoffeeAt: clients.lastCoffeeAt,
+  rewardEarnedAt: clients.rewardEarnedAt,
+  lastChange: clients.lastChange,
+};
+
+// Reads never throw: a malformed id or a DB error is "client not found" to the caller.
+const readClient = async (id: string): Promise<ClientRow | null> => {
+  if (!isUuid(id)) return null;
+  try {
+    const [client] = await db.select(CLIENT_COLUMNS).from(clients).where(eq(clients.id, id));
+    return client ?? null;
+  } catch (error) {
+    console.error("Error reading client:", error);
+    return null;
+  }
+};
+
+// Only updates if nobody changed the count in the meantime (optimistic concurrency on `coffees`).
+const updateIfCoffees = async (
+  id: string,
+  expectedCoffees: number,
+  patch: Partial<typeof clients.$inferInsert>
+) => {
+  try {
+    const rows = await db
+      .update(clients)
+      .set(patch)
+      .where(and(eq(clients.id, id), eq(clients.coffees, expectedCoffees)))
+      .returning({ id: clients.id });
+    return rows.length > 0;
+  } catch (error) {
+    console.error("Error updating client:", error);
+    return false;
+  }
+};
 
 const changeCoffees = async (
   id: string,
   delta: 1 | -1
 ): Promise<ChangeResult> => {
-  const supabase = await createClient();
-  const { data: client, error: readError } = await supabase
-    .from(TABLE_NAME)
-    .select(CLIENT_COLUMNS)
-    .eq("id", id)
-    .maybeSingle();
-
-  if (readError || !client) {
-    console.error("Error reading client to change coffees:", readError);
-    return { error: "Cliente no encontrado." };
-  }
+  const client = await readClient(id);
+  if (!client) return { error: "Cliente no encontrado." };
   if (delta === 1 && client.coffees >= COFFEES_TO_EXCHANGE) {
     return { error: "Este cliente ya tiene su café gratis." };
   }
@@ -87,30 +120,21 @@ const changeCoffees = async (
     delta === 1
       ? {
           coffees: newCount,
-          total_coffees: client.total_coffees + 1,
-          last_coffee_at: new Date().toISOString(),
-          last_change: "added",
+          totalCoffees: client.totalCoffees + 1,
+          lastCoffeeAt: new Date().toISOString(),
+          lastChange: "added",
           // Reaching the goal starts the "reward pending" clock.
           ...(newCount === COFFEES_TO_EXCHANGE && {
-            reward_earned_at: new Date().toISOString(),
+            rewardEarnedAt: new Date().toISOString(),
           }),
         }
       : {
           coffees: newCount,
-          total_coffees: Math.max(0, client.total_coffees - 1),
-          last_change: "removed",
-          reward_earned_at: null,
+          totalCoffees: Math.max(0, client.totalCoffees - 1),
+          lastChange: "removed",
+          rewardEarnedAt: null,
         };
-  // Only updates if nobody changed the count in the meantime.
-  const { data: updated, error: updateError } = await supabase
-    .from(TABLE_NAME)
-    .update(patch)
-    .eq("id", id)
-    .eq("coffees", client.coffees)
-    .select("id");
-
-  if (updateError || !updated?.length) {
-    console.error("Error changing coffees:", updateError);
+  if (!(await updateIfCoffees(id, client.coffees, patch))) {
     return {
       error:
         delta === 1
@@ -130,32 +154,19 @@ const applyRedeem = async (
   id: string,
   source: RedeemSource
 ): Promise<ActionResult> => {
-  const supabase = await createClient();
-  const { data: client } = await supabase
-    .from(TABLE_NAME)
-    .select(CLIENT_COLUMNS)
-    .eq("id", id)
-    .maybeSingle();
+  const client = await readClient(id);
   if (!client) return { error: "Cliente no encontrado." };
   if (client.coffees < COFFEES_TO_EXCHANGE) {
     return { error: "Este cliente todavía no completa su tarjeta." };
   }
 
-  const { data: updated, error } = await supabase
-    .from(TABLE_NAME)
-    .update({
-      coffees: 0,
-      rewards_redeemed: client.rewards_redeemed + 1,
-      reward_earned_at: null,
-      last_change: "redeemed",
-    })
-    .eq("id", id)
-    .eq("coffees", client.coffees)
-    .select("id");
-  if (error || !updated?.length) {
-    console.error("Error redeeming reward:", error);
-    return { error: "No se pudo canjear el café. Intenta de nuevo." };
-  }
+  const ok = await updateIfCoffees(id, client.coffees, {
+    coffees: 0,
+    rewardsRedeemed: client.rewardsRedeemed + 1,
+    rewardEarnedAt: null,
+    lastChange: "redeemed",
+  });
+  if (!ok) return { error: "No se pudo canjear el café. Intenta de nuevo." };
 
   await track(
     client.email,
@@ -163,10 +174,10 @@ const applyRedeem = async (
     {
       source,
       coffees_before: client.coffees,
-      rewards_redeemed: client.rewards_redeemed + 1,
-      days_since_earned: daysSince(client.reward_earned_at),
+      rewards_redeemed: client.rewardsRedeemed + 1,
+      days_since_earned: daysSince(client.rewardEarnedAt),
     },
-    { coffees: 0, rewards_redeemed: client.rewards_redeemed + 1 }
+    { coffees: 0, rewards_redeemed: client.rewardsRedeemed + 1 }
   );
   notifyPassChanged(id);
 
@@ -183,8 +194,8 @@ const applyCoffeeAdded = async (
   if ("error" in result) return result;
   const { client, newCount } = result;
 
-  const totalCoffees = client.total_coffees + 1;
-  const cycle = client.rewards_redeemed + 1;
+  const totalCoffees = client.totalCoffees + 1;
+  const cycle = client.rewardsRedeemed + 1;
   await track(
     client.email,
     "coffee_added",
@@ -193,8 +204,8 @@ const applyCoffeeAdded = async (
       source,
       total_coffees: totalCoffees,
       cycle,
-      is_first_coffee: client.total_coffees === 0,
-      days_since_last_coffee: daysSince(client.last_coffee_at),
+      is_first_coffee: client.totalCoffees === 0,
+      days_since_last_coffee: daysSince(client.lastCoffeeAt),
     },
     {
       coffees: newCount,
@@ -222,12 +233,7 @@ export const addCoffeeByToken = async (token: string): Promise<ActionResult> => 
   const id = verifyClientToken(token);
   if (!id) return { error: "Código no válido. No es una tarjeta de Reset." };
   // A scan on a full card redeems the free coffee instead of adding one.
-  const supabase = await createClient();
-  const { data: current } = await supabase
-    .from(TABLE_NAME)
-    .select("coffees")
-    .eq("id", id)
-    .maybeSingle();
+  const current = await readClient(id);
   const result =
     current && current.coffees >= COFFEES_TO_EXCHANGE
       ? await applyRedeem(id, "scan")
@@ -256,7 +262,7 @@ export const removeCoffee = async (
     client.email,
     "coffee_removed",
     { coffees: newCount },
-    { coffees: newCount, total_coffees: Math.max(0, client.total_coffees - 1) }
+    { coffees: newCount, total_coffees: Math.max(0, client.totalCoffees - 1) }
   );
   notifyPassChanged(id);
 
@@ -277,38 +283,25 @@ export const undoRedeem = async (
 ): Promise<ActionResult> => {
   if (!(await isAdmin())) return UNAUTHORIZED;
   const id = formData.get("id") as string;
-  const supabase = await createClient();
-  const { data: client } = await supabase
-    .from(TABLE_NAME)
-    .select(CLIENT_COLUMNS)
-    .eq("id", id)
-    .maybeSingle();
+  const client = await readClient(id);
   if (!client) return { error: "Cliente no encontrado." };
-  if (client.coffees !== 0 || client.last_change !== "redeemed") {
+  if (client.coffees !== 0 || client.lastChange !== "redeemed") {
     return { error: "Ya no se puede deshacer este canje." };
   }
 
-  const { data: updated, error } = await supabase
-    .from(TABLE_NAME)
-    .update({
-      coffees: COFFEES_TO_EXCHANGE,
-      rewards_redeemed: Math.max(0, client.rewards_redeemed - 1),
-      reward_earned_at: new Date().toISOString(),
-      last_change: "restored",
-    })
-    .eq("id", id)
-    .eq("coffees", 0)
-    .select("id");
-  if (error || !updated?.length) {
-    console.error("Error undoing redeem:", error);
-    return { error: "No se pudo deshacer el canje. Intenta de nuevo." };
-  }
+  const ok = await updateIfCoffees(id, 0, {
+    coffees: COFFEES_TO_EXCHANGE,
+    rewardsRedeemed: Math.max(0, client.rewardsRedeemed - 1),
+    rewardEarnedAt: new Date().toISOString(),
+    lastChange: "restored",
+  });
+  if (!ok) return { error: "No se pudo deshacer el canje. Intenta de nuevo." };
 
   await track(
     client.email,
     "reward_redeem_undone",
     {},
-    { coffees: COFFEES_TO_EXCHANGE, rewards_redeemed: Math.max(0, client.rewards_redeemed - 1) }
+    { coffees: COFFEES_TO_EXCHANGE, rewards_redeemed: Math.max(0, client.rewardsRedeemed - 1) }
   );
   notifyPassChanged(id);
 
@@ -322,33 +315,28 @@ export const resetCoffee = async (
   FormData: FormData
 ): Promise<ActionResult> => {
   if (!(await isAdmin())) return UNAUTHORIZED;
-  const supabase = await createClient();
 
   const id = FormData.get("id") as string;
-  const { data: before } = await supabase
-    .from(TABLE_NAME)
-    .select("email, coffees")
-    .eq("id", id)
-    .maybeSingle();
+  const before = await readClient(id);
   if (before && before.coffees >= COFFEES_TO_EXCHANGE) {
     return applyRedeem(id, "dialog");
   }
+  if (!before) return { error: "Cliente no encontrado." };
 
-  // supabase-js returns errors instead of throwing, so they must be read from the result.
-  const { error } = await supabase
-    .from(TABLE_NAME)
-    .update({ coffees: 0, reward_earned_at: null, last_change: "reset" })
-    .eq("id", id);
-
-  if (error) {
+  try {
+    await db
+      .update(clients)
+      .set({ coffees: 0, rewardEarnedAt: null, lastChange: "reset" })
+      .where(eq(clients.id, id));
+  } catch (error) {
     console.error("Error resetting coffee:", error);
     return { error: "No se pudo reiniciar los cafés. Intenta de nuevo." };
   }
 
   await track(
-    before?.email ?? null,
+    before.email,
     "coffee_reset",
-    { coffees_before: before?.coffees },
+    { coffees_before: before.coffees },
     { coffees: 0 }
   );
   notifyPassChanged(id);
@@ -361,21 +349,21 @@ export const deleteCoffee = async (
   FormData: FormData
 ): Promise<ActionResult> => {
   if (!(await isAdmin())) return UNAUTHORIZED;
-  const supabase = await createClient();
 
   const id = FormData.get("id") as string;
-  const { data: deleted, error } = await supabase
-    .from(TABLE_NAME)
-    .delete()
-    .eq("id", id)
-    .select("email, coffees");
+  if (!isUuid(id)) return { error: "Cliente no encontrado." };
 
-  if (error) {
+  let removed: { email: string | null; coffees: number } | undefined;
+  try {
+    [removed] = await db
+      .delete(clients)
+      .where(eq(clients.id, id))
+      .returning({ email: clients.email, coffees: clients.coffees });
+  } catch (error) {
     console.error("Error deleting coffee:", error);
     return { error: "No se pudo borrar al cliente. Intenta de nuevo." };
   }
 
-  const removed = deleted?.[0];
   await track(removed?.email ?? null, "client_deleted", { coffees: removed?.coffees });
 
   revalidatePath("/admin");

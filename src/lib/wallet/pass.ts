@@ -13,7 +13,7 @@ export type PassClient = {
   name: string | null;
   coffees: number;
   // Tells a redeemed reward from a manual reset when the card is back at 0.
-  last_change?: string | null;
+  lastChange?: string | null;
 };
 
 const ASSETS = path.join(process.cwd(), "src/lib/wallet/assets");
@@ -77,7 +77,7 @@ export async function buildPass(client: PassClient): Promise<Buffer> {
           changeMessage: reward
             ? "¡Tarjeta completa! Café gratis en tu próxima visita ☕"
             : coffees === 0
-              ? client.last_change === "redeemed"
+              ? client.lastChange === "redeemed"
                 ? "Café gratis canjeado ✅ ¡A juntar sellos de nuevo!"
                 : "Tu tarjeta volvió a 0 sellos"
               : "☕ Llevas %@ cafés",

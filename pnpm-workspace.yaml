@@ -2,3 +2,6 @@ allowBuilds:
   '@vercel/speed-insights': false
   core-js: false
   sharp: true
+  '@prisma/client': false
+  better-sqlite3: false
+  esbuild: false

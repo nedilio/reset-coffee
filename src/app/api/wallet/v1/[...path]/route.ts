@@ -1,11 +1,12 @@
 import { NextRequest } from "next/server";
 import { captureServerEvent } from "@/actions/ph-client";
 import { getClientById } from "@/clients";
-import { TABLE_NAME } from "@/lib/constants";
+import { db } from "@/db";
+import { clients, walletRegistrations } from "@/db/schema";
+import { and, eq, gt, inArray, sql } from "drizzle-orm";
 import { passTypeId, walletEnabled } from "@/lib/wallet/config";
 import { buildPass, PKPASS_HEADERS } from "@/lib/wallet/pass";
 import { verifyPassAuth } from "@/lib/wallet/token";
-import { createClient } from "@/supabase-server";
 
 // Apple PassKit web service (webServiceURL = <base>/api/wallet, Apple appends /v1/...):
 //   POST   devices/{device}/registrations/{passType}/{serial}   register for pushes
@@ -41,58 +42,61 @@ async function register(req: NextRequest, device: string, serial: string) {
   const body = (await req.json().catch(() => null)) as { pushToken?: string } | null;
   if (!body?.pushToken) return empty(400);
 
-  const supabase = await createClient();
-  const { data: existing } = await supabase
-    .from("wallet_registrations")
-    .select("serial_number")
-    .eq("device_library_id", device)
-    .eq("serial_number", serial)
-    .maybeSingle();
-  const { error } = await supabase.from("wallet_registrations").upsert({
-    device_library_id: device,
-    serial_number: serial,
-    push_token: body.pushToken,
-  });
-  if (error) {
+  try {
+    // xmax = 0 only on a freshly inserted row: the device registered this pass for the first time.
+    const [row] = await db
+      .insert(walletRegistrations)
+      .values({ deviceLibraryId: device, serialNumber: serial, pushToken: body.pushToken })
+      .onConflictDoUpdate({
+        target: [walletRegistrations.deviceLibraryId, walletRegistrations.serialNumber],
+        set: { pushToken: body.pushToken },
+      })
+      .returning({ inserted: sql<boolean>`(xmax = 0)` });
+    // 201 = first time this device registers the pass, i.e. the customer really added it to Wallet.
+    if (row.inserted) await trackWallet(serial, "wallet_pass_installed", true);
+    return empty(row.inserted ? 201 : 200);
+  } catch (error) {
     // FK violation = the client no longer exists (deleted by an admin).
     console.error("Wallet register error:", error);
-    return empty(error.code === "23503" ? 401 : 500);
+    return empty((error as { code?: string }).code === "23503" ? 401 : 500);
   }
-  // 201 = first time this device registers the pass, i.e. the customer really added it to Wallet.
-  if (!existing) await trackWallet(serial, "wallet_pass_installed", true);
-  return empty(existing ? 200 : 201);
 }
 
 async function unregister(req: NextRequest, device: string, serial: string) {
   if (!verifyPassAuth(req.headers.get("authorization"), serial)) return empty(401);
-  const supabase = await createClient();
-  await supabase
-    .from("wallet_registrations")
-    .delete()
-    .eq("device_library_id", device)
-    .eq("serial_number", serial);
+  await db
+    .delete(walletRegistrations)
+    .where(
+      and(
+        eq(walletRegistrations.deviceLibraryId, device),
+        eq(walletRegistrations.serialNumber, serial)
+      )
+    );
   await trackWallet(serial, "wallet_pass_removed", false);
   return empty(200);
 }
 
 async function changedSerials(req: NextRequest, device: string) {
   const since = req.nextUrl.searchParams.get("passesUpdatedSince");
-  const supabase = await createClient();
-  const { data: regs } = await supabase
-    .from("wallet_registrations")
-    .select("serial_number")
-    .eq("device_library_id", device);
-  const serials = (regs ?? []).map((r) => r.serial_number);
+  const regs = await db
+    .select({ serial: walletRegistrations.serialNumber })
+    .from(walletRegistrations)
+    .where(eq(walletRegistrations.deviceLibraryId, device));
+  const serials = regs.map((r) => r.serial);
   if (serials.length === 0) return empty(204);
 
-  let query = supabase.from(TABLE_NAME).select("id, updated_at").in("id", serials);
-  if (since && !Number.isNaN(Date.parse(since))) query = query.gt("updated_at", since);
-  const { data: changed } = await query;
-  if (!changed?.length) return empty(204);
+  const sinceValid = since && !Number.isNaN(Date.parse(since));
+  const changed = await db
+    .select({ id: clients.id, updatedAt: clients.updatedAt })
+    .from(clients)
+    .where(
+      and(inArray(clients.id, serials), sinceValid ? gt(clients.updatedAt, since) : undefined)
+    );
+  if (!changed.length) return empty(204);
 
   const lastUpdated = changed.reduce(
-    (max, c) => (c.updated_at > max ? c.updated_at : max),
-    changed[0].updated_at
+    (max, c) => (c.updatedAt > max ? c.updatedAt : max),
+    changed[0].updatedAt
   );
   return Response.json({ serialNumbers: changed.map((c) => c.id), lastUpdated });
 }
@@ -104,7 +108,7 @@ async function latestPass(req: NextRequest, serial: string) {
 
   // No 304 on If-Modified-Since: HTTP dates have second precision, so two changes within the
   // same second would leave the device on a stale pass. Apple only asks after a push anyway.
-  const modified = new Date(client.updated_at);
+  const modified = new Date(client.updatedAt);
   const pass = await buildPass(client);
   return new Response(new Uint8Array(pass), {
     headers: { ...PKPASS_HEADERS, "Last-Modified": modified.toUTCString() },
