@@ -18,7 +18,7 @@ export async function GET() {
   captureServerEvent({
     distinctId: email,
     event: "wallet_pass_downloaded",
-    properties: { coffees: client.coffees },
+    properties: { coffees: client.coffees, platform: "apple" },
   });
   return new Response(new Uint8Array(pass), {
     headers: {

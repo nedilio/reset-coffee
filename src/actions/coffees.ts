@@ -9,7 +9,7 @@ import { redirect } from "next/navigation";
 import { captureServerEvent } from "./ph-client";
 import { getAdminId, UNAUTHORIZED } from "@/lib/auth-guards";
 import { verifyClientToken } from "@/lib/wallet/token";
-import { notifyPassChanged } from "@/lib/wallet/apns";
+import { notifyPassChanged } from "@/lib/wallet/notify";
 import { currentShop } from "@/lib/shop";
 
 // Every action returns this so the admin UI can show the error (or a success toast).

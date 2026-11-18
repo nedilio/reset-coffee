@@ -1,10 +1,9 @@
 import "server-only";
 import { connect } from "node:http2";
-import { after } from "next/server";
 import { db } from "@/db";
 import { walletRegistrations } from "@/db/schema";
 import { eq, inArray } from "drizzle-orm";
-import { certificates, passTypeId, walletEnabled, webServiceBase } from "./config";
+import { certificates, passTypeId } from "./config";
 
 const APNS_HOST = "https://api.push.apple.com";
 
@@ -82,14 +81,4 @@ async function notify(serialNumber: string) {
   }
 }
 
-// Fire-and-forget from server actions; after() keeps the function alive on Vercel until done.
-export function notifyPassChanged(serialNumber: string) {
-  if (!walletEnabled() || !webServiceBase()) return;
-  const run = () =>
-    notify(serialNumber).catch((err) => console.error("Wallet push failed:", err));
-  try {
-    after(run);
-  } catch {
-    void run();
-  }
-}
+export { notify as notifyApplePass };
