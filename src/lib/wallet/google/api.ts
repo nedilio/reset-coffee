@@ -55,6 +55,7 @@ export async function upsertObject(obj: { id: string }) {
 // Returns false when the object does not exist (the customer never saved the pass).
 export async function patchObject(obj: { id: string }): Promise<boolean> {
   const r = await call("PATCH", `/loyaltyObject/${encodeURIComponent(obj.id)}`, obj);
+  console.log(`Google Wallet patch ${obj.id} -> ${r.status}`);
   if (r.status === 404) return false;
   if (r.status >= 300) throw fail("object patch", r);
   return true;

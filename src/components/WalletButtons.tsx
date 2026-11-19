@@ -30,12 +30,15 @@ export default function WalletButtons({ apple, google }: { apple: boolean; googl
         </a>
       )}
       {google && platform !== "ios" && (
-        // TODO: swap for Google's official "Add to Google Wallet" badge (public/img) before going live.
-        <a
-          href="/api/wallet/google/save"
-          className="inline-flex h-12 items-center rounded-lg bg-black px-4 text-sm font-medium text-white active:scale-[0.98]"
-        >
-          Agregar a Google Wallet
+        <a href="/api/wallet/google/save" className="active:scale-[0.98]">
+          {/* Google's official "Add to Google Wallet" badge (es-419). Its guidelines forbid editing it. */}
+          <img
+            src="/img/add-to-google-wallet-es.svg"
+            alt="Agregar a Google Wallet"
+            width={209}
+            height={48}
+            className="h-12 w-auto"
+          />
         </a>
       )}
     </div>
