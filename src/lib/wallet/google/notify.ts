@@ -11,7 +11,10 @@ import { loyaltyObject } from "./pass";
 export async function notifyGooglePass(clientId: string) {
   if (!googleWalletEnabled() || !isUuid(clientId)) return;
   const [client] = await db.select().from(clients).where(eq(clients.id, clientId));
-  if (!client?.googleWalletAt) return;
+  if (!client?.googleWalletAt) {
+    console.log(`Google Wallet patch skipped for ${clientId}: no saved pass`);
+    return;
+  }
   // NOTIFY asks Google for a field-update notification (it only fires for allowlisted fields).
   await patchObject({ ...loyaltyObject(client), notifyPreference: "NOTIFY" } as { id: string });
 }
