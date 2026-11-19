@@ -8,12 +8,14 @@ import { WALLET_COLORS } from "./theme";
 
 // storeCard strip: 375 x 144 pt (Apple's size for passes without a 3.5" square-barcode squeeze).
 const W = 375;
-const H = 144;
+// Apple's strip is 375 x 144; Google's hero image wants ~3:1, so it gets a shorter variant.
+type Variant = { h: number; rowsY: number[] };
+const APPLE: Variant = { h: 144, rowsY: [40, 104] };
+const GOOGLE: Variant = { h: 125, rowsY: [36, 91] };
 const SLOTS = COFFEES_TO_EXCHANGE + 1; // 9 stamps + the free one
 const COLS = 5;
 const GAP_X = 62;
 const R = 21;
-const ROWS_Y = [40, 104];
 // Fixed "hand stamped" tilt per slot, so the card looks the same on every render.
 const TILT = [-12, 8, -4, 15, -9, 6, -14, 10, -6, 0];
 
@@ -25,9 +27,9 @@ const MASCOT_H = 170;
 const MASCOT_W = (MASCOT_H * 305) / 450; // mascot.png is 305 x 450
 const MASCOT_OPACITY = 0.1;
 
-const slotCenter = (i: number) => ({
+const slotCenter = (i: number, v: Variant) => ({
   x: W / 2 + ((i % COLS) - (COLS - 1) / 2) * GAP_X,
-  y: ROWS_Y[Math.floor(i / COLS)],
+  y: v.rowsY[Math.floor(i / COLS)],
 });
 
 const cup = (fill: string) =>
@@ -37,12 +39,13 @@ const cup = (fill: string) =>
 
 // Whole strip drawn as one SVG: satori is limited with transforms, resvg (which rasterizes
 // <img> sources) is not.
-function stripSvg(coffees: number): string {
+function stripSvg(coffees: number, v: Variant): string {
+  const H = v.h;
   const reward = coffees >= COFFEES_TO_EXCHANGE;
   const c = reward ? WALLET_COLORS.reward : WALLET_COLORS.normal;
   const cupScale = (R * 1.25) / COFFEE_VIEWBOX.width;
   const slots = Array.from({ length: SLOTS }, (_, i) => {
-    const { x, y } = slotCenter(i);
+    const { x, y } = slotCenter(i, v);
     const isFree = i === SLOTS - 1;
     if (isFree) {
       return reward
@@ -70,16 +73,21 @@ function stripSvg(coffees: number): string {
   </svg>`;
 }
 
-export async function renderStrip(coffees: number, scale: 1 | 2 | 3): Promise<Buffer> {
+export async function renderStrip(
+  coffees: number,
+  scale: number,
+  v: Variant = APPLE
+): Promise<Buffer> {
+  const H = v.h;
   const reward = coffees >= COFFEES_TO_EXCHANGE;
   const c = reward ? WALLET_COLORS.reward : WALLET_COLORS.normal;
-  const svg = stripSvg(coffees);
-  const free = slotCenter(SLOTS - 1);
+  const svg = stripSvg(coffees, v);
+  const free = slotCenter(SLOTS - 1, v);
   const src = `data:image/svg+xml;base64,${Buffer.from(svg).toString("base64")}`;
   const image = new ImageResponse(
     (
-      <div style={{ display: "flex", position: "relative", width: W * scale, height: H * scale }}>
-        <img src={src} width={W * scale} height={H * scale} alt="" />
+      <div style={{ display: "flex", position: "relative", width: Math.round(W * scale), height: Math.round(H * scale) }}>
+        <img src={src} width={Math.round(W * scale)} height={Math.round(H * scale)} alt="" />
         {/* Text is laid out by satori (it has the font); the SVG only carries shapes. */}
         <div
           style={{
@@ -100,7 +108,33 @@ export async function renderStrip(coffees: number, scale: 1 | 2 | 3): Promise<Bu
         </div>
       </div>
     ),
-    { width: W * scale, height: H * scale }
+    { width: Math.round(W * scale), height: Math.round(H * scale) }
+  );
+  return Buffer.from(await image.arrayBuffer());
+}
+
+// Google Wallet hero image: 1032 px wide, same stamps as the Apple strip.
+export const renderHero = (coffees: number) => renderStrip(coffees, 1032 / W, GOOGLE);
+
+// Google Wallet program logo (shown in a circle): the mascot on the brand green.
+export async function renderLogo(size = 660): Promise<Buffer> {
+  const h = size * 0.72;
+  const image = new ImageResponse(
+    (
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          width: size,
+          height: size,
+          background: WALLET_COLORS.normal.background,
+        }}
+      >
+        <img src={MASCOT_SRC} width={(h * 305) / 450} height={h} alt="" />
+      </div>
+    ),
+    { width: size, height: size }
   );
   return Buffer.from(await image.arrayBuffer());
 }

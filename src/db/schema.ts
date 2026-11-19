@@ -37,6 +37,8 @@ export const clients = pgTable(
     rewardEarnedAt: tz("reward_earned_at"),
     // added | removed | redeemed | restored | reset
     lastChange: text("last_change"),
+    // Set when the customer saves the Google Wallet pass: only those get API updates.
+    googleWalletAt: tz("google_wallet_at"),
     createdAt: tz("created_at").notNull().defaultNow(),
     updatedAt: tz("updated_at").notNull().defaultNow(),
   },

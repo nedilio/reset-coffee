@@ -1,0 +1,1 @@
+ALTER TABLE "clients" ADD COLUMN "google_wallet_at" timestamp with time zone;

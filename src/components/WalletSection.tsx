@@ -1,5 +1,7 @@
 import QRCode from "qrcode";
+import WalletButtons from "@/components/WalletButtons";
 import { walletEnabled } from "@/lib/wallet/config";
+import { googleWalletEnabled } from "@/lib/wallet/google/config";
 import { signClientToken } from "@/lib/wallet/token";
 
 // Server component for /card: the "add to Wallet" link and the same QR the pass carries,
@@ -14,19 +16,7 @@ export default async function WalletSection({ clientId }: { clientId: string }) 
 
   return (
     <section className="flex w-full max-w-md flex-col items-center gap-3 pb-4">
-      {walletEnabled() && (
-        // Plain link (not fetch): Safari hands .pkpass responses straight to Wallet.
-        <a href="/api/wallet/pass" className="active:scale-[0.98]">
-          {/* Apple's official badge (es-MX). Its guidelines forbid editing it, so it's used as is. */}
-          <img
-            src="/img/add-to-apple-wallet-es.svg"
-            alt="Agregar a Apple Wallet"
-            width={153}
-            height={48}
-            className="h-12 w-auto"
-          />
-        </a>
-      )}
+      <WalletButtons apple={walletEnabled()} google={googleWalletEnabled()} />
       <div className="flex flex-col items-center gap-1">
         <div
           className="size-40 rounded-xl border border-resetGreen/15 bg-white p-2 shadow-sm"
