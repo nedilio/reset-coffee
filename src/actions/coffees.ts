@@ -1,13 +1,13 @@
 "use server";
 import { COFFEES_TO_EXCHANGE } from "@/lib/constants";
 import { db } from "@/db";
-import { clients } from "@/db/schema";
+import { cardEvents, clients, type CardEventType } from "@/db/schema";
 import { and, eq } from "drizzle-orm";
 import { isUuid } from "@/lib/uuid";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { captureServerEvent } from "./ph-client";
-import { isAdmin, UNAUTHORIZED } from "@/lib/auth-guards";
+import { getAdminId, UNAUTHORIZED } from "@/lib/auth-guards";
 import { verifyClientToken } from "@/lib/wallet/token";
 import { notifyPassChanged } from "@/lib/wallet/apns";
 import { currentShop } from "@/lib/shop";
@@ -83,19 +83,38 @@ const readClient = async (id: string): Promise<ClientRow | null> => {
   }
 };
 
-// Only updates if nobody changed the count in the meantime (optimistic concurrency on `coffees`).
+type CardSource = "button" | "scan" | "dialog";
+// What gets recorded in card_events next to the update.
+type CardChange = { type: CardEventType; adminId: string; source?: CardSource };
+
+// The only way a card changes: updates only if nobody changed the count in the meantime
+// (optimistic concurrency on `coffees`) and, in the same transaction, records the change in
+// card_events (the owners' stats). A lost race writes nothing.
 const updateIfCoffees = async (
   id: string,
   expectedCoffees: number,
-  patch: Partial<typeof clients.$inferInsert>
+  patch: Partial<typeof clients.$inferInsert>,
+  change: CardChange
 ) => {
   try {
-    const rows = await db
-      .update(clients)
-      .set(patch)
-      .where(and(eq(clients.id, id), eq(clients.coffees, expectedCoffees)))
-      .returning({ id: clients.id });
-    return rows.length > 0;
+    const shop = await currentShop();
+    return await db.transaction(async (tx) => {
+      const [row] = await tx
+        .update(clients)
+        .set({ ...patch, lastChange: change.type })
+        .where(and(eq(clients.id, id), eq(clients.coffees, expectedCoffees)))
+        .returning({ coffees: clients.coffees });
+      if (!row) return false;
+      await tx.insert(cardEvents).values({
+        clientId: id,
+        type: change.type,
+        coffeesAfter: row.coffees,
+        source: change.source ?? null,
+        shop,
+        adminId: change.adminId,
+      });
+      return true;
+    });
   } catch (error) {
     console.error("Error updating client:", error);
     return false;
@@ -104,7 +123,9 @@ const updateIfCoffees = async (
 
 const changeCoffees = async (
   id: string,
-  delta: 1 | -1
+  delta: 1 | -1,
+  adminId: string,
+  source?: CardSource
 ): Promise<ChangeResult> => {
   const client = await readClient(id);
   if (!client) return { error: "Cliente no encontrado." };
@@ -122,7 +143,6 @@ const changeCoffees = async (
           coffees: newCount,
           totalCoffees: client.totalCoffees + 1,
           lastCoffeeAt: new Date().toISOString(),
-          lastChange: "added",
           // Reaching the goal starts the "reward pending" clock.
           ...(newCount === COFFEES_TO_EXCHANGE && {
             rewardEarnedAt: new Date().toISOString(),
@@ -131,10 +151,11 @@ const changeCoffees = async (
       : {
           coffees: newCount,
           totalCoffees: Math.max(0, client.totalCoffees - 1),
-          lastChange: "removed",
           rewardEarnedAt: null,
         };
-  if (!(await updateIfCoffees(id, client.coffees, patch))) {
+  const change: CardChange =
+    delta === 1 ? { type: "added", adminId, source } : { type: "removed", adminId, source };
+  if (!(await updateIfCoffees(id, client.coffees, patch, change))) {
     return {
       error:
         delta === 1
@@ -146,13 +167,12 @@ const changeCoffees = async (
   return { client, newCount };
 };
 
-type RedeemSource = "scan" | "button" | "dialog";
-
 // Redeems the free coffee: the card goes back to 0 and the redemption is counted. Shared by the
 // scanner (a scan on a full card), the "Canjear" button and the adjust dialog.
 const applyRedeem = async (
   id: string,
-  source: RedeemSource
+  source: CardSource,
+  adminId: string
 ): Promise<ActionResult> => {
   const client = await readClient(id);
   if (!client) return { error: "Cliente no encontrado." };
@@ -160,12 +180,12 @@ const applyRedeem = async (
     return { error: "Este cliente todavía no completa su tarjeta." };
   }
 
-  const ok = await updateIfCoffees(id, client.coffees, {
-    coffees: 0,
-    rewardsRedeemed: client.rewardsRedeemed + 1,
-    rewardEarnedAt: null,
-    lastChange: "redeemed",
-  });
+  const ok = await updateIfCoffees(
+    id,
+    client.coffees,
+    { coffees: 0, rewardsRedeemed: client.rewardsRedeemed + 1, rewardEarnedAt: null },
+    { type: "redeemed", adminId, source }
+  );
   if (!ok) return { error: "No se pudo canjear el café. Intenta de nuevo." };
 
   await track(
@@ -188,9 +208,10 @@ const applyRedeem = async (
 // Shared by the "+1" button and the QR scanner: one place for the update, analytics and push.
 const applyCoffeeAdded = async (
   id: string,
-  source: "button" | "scan"
+  source: "button" | "scan",
+  adminId: string
 ): Promise<ActionResult> => {
-  const result = await changeCoffees(id, 1);
+  const result = await changeCoffees(id, 1, adminId, source);
   if ("error" in result) return result;
   const { client, newCount } = result;
 
@@ -223,21 +244,23 @@ const applyCoffeeAdded = async (
 };
 
 export const addCoffee = async (formData: FormData): Promise<ActionResult> => {
-  if (!(await isAdmin())) return UNAUTHORIZED;
-  return applyCoffeeAdded(formData.get("id") as string, "button");
+  const adminId = await getAdminId();
+  if (!adminId) return UNAUTHORIZED;
+  return applyCoffeeAdded(formData.get("id") as string, "button", adminId);
 };
 
 // Called by /admin/scan with whatever the camera or the scanner gun read.
 export const addCoffeeByToken = async (token: string): Promise<ActionResult> => {
-  if (!(await isAdmin())) return UNAUTHORIZED;
+  const adminId = await getAdminId();
+  if (!adminId) return UNAUTHORIZED;
   const id = verifyClientToken(token);
   if (!id) return { error: "Código no válido. No es una tarjeta de Reset." };
   // A scan on a full card redeems the free coffee instead of adding one.
   const current = await readClient(id);
   const result =
     current && current.coffees >= COFFEES_TO_EXCHANGE
-      ? await applyRedeem(id, "scan")
-      : await applyCoffeeAdded(id, "scan");
+      ? await applyRedeem(id, "scan", adminId)
+      : await applyCoffeeAdded(id, "scan", adminId);
   // A deleted client that signed in again has a new id, so their old pass points nowhere.
   if ("error" in result && result.error === "Cliente no encontrado.") {
     return {
@@ -252,9 +275,10 @@ export const addCoffeeByToken = async (token: string): Promise<ActionResult> => 
 export const removeCoffee = async (
   formData: FormData
 ): Promise<ActionResult> => {
-  if (!(await isAdmin())) return UNAUTHORIZED;
+  const adminId = await getAdminId();
+  if (!adminId) return UNAUTHORIZED;
   const id = formData.get("id") as string;
-  const result = await changeCoffees(id, -1);
+  const result = await changeCoffees(id, -1, adminId);
   if ("error" in result) return result;
   const { client, newCount } = result;
 
@@ -273,15 +297,17 @@ export const removeCoffee = async (
 export const redeemCoffee = async (
   formData: FormData
 ): Promise<ActionResult> => {
-  if (!(await isAdmin())) return UNAUTHORIZED;
-  return applyRedeem(formData.get("id") as string, "button");
+  const adminId = await getAdminId();
+  if (!adminId) return UNAUTHORIZED;
+  return applyRedeem(formData.get("id") as string, "button", adminId);
 };
 
 // "Deshacer" after a redemption: only valid while the card is still at 0 from that redemption.
 export const undoRedeem = async (
   formData: FormData
 ): Promise<ActionResult> => {
-  if (!(await isAdmin())) return UNAUTHORIZED;
+  const adminId = await getAdminId();
+  if (!adminId) return UNAUTHORIZED;
   const id = formData.get("id") as string;
   const client = await readClient(id);
   if (!client) return { error: "Cliente no encontrado." };
@@ -289,12 +315,16 @@ export const undoRedeem = async (
     return { error: "Ya no se puede deshacer este canje." };
   }
 
-  const ok = await updateIfCoffees(id, 0, {
-    coffees: COFFEES_TO_EXCHANGE,
-    rewardsRedeemed: Math.max(0, client.rewardsRedeemed - 1),
-    rewardEarnedAt: new Date().toISOString(),
-    lastChange: "restored",
-  });
+  const ok = await updateIfCoffees(
+    id,
+    0,
+    {
+      coffees: COFFEES_TO_EXCHANGE,
+      rewardsRedeemed: Math.max(0, client.rewardsRedeemed - 1),
+      rewardEarnedAt: new Date().toISOString(),
+    },
+    { type: "restored", adminId }
+  );
   if (!ok) return { error: "No se pudo deshacer el canje. Intenta de nuevo." };
 
   await track(
@@ -314,24 +344,23 @@ export const undoRedeem = async (
 export const resetCoffee = async (
   FormData: FormData
 ): Promise<ActionResult> => {
-  if (!(await isAdmin())) return UNAUTHORIZED;
+  const adminId = await getAdminId();
+  if (!adminId) return UNAUTHORIZED;
 
   const id = FormData.get("id") as string;
   const before = await readClient(id);
   if (before && before.coffees >= COFFEES_TO_EXCHANGE) {
-    return applyRedeem(id, "dialog");
+    return applyRedeem(id, "dialog", adminId);
   }
   if (!before) return { error: "Cliente no encontrado." };
 
-  try {
-    await db
-      .update(clients)
-      .set({ coffees: 0, rewardEarnedAt: null, lastChange: "reset" })
-      .where(eq(clients.id, id));
-  } catch (error) {
-    console.error("Error resetting coffee:", error);
-    return { error: "No se pudo reiniciar los cafés. Intenta de nuevo." };
-  }
+  const ok = await updateIfCoffees(
+    id,
+    before.coffees,
+    { coffees: 0, rewardEarnedAt: null },
+    { type: "reset", adminId, source: "dialog" }
+  );
+  if (!ok) return { error: "No se pudo reiniciar los cafés. Intenta de nuevo." };
 
   await track(
     before.email,
@@ -348,7 +377,7 @@ export const resetCoffee = async (
 export const deleteCoffee = async (
   FormData: FormData
 ): Promise<ActionResult> => {
-  if (!(await isAdmin())) return UNAUTHORIZED;
+  if (!(await getAdminId())) return UNAUTHORIZED;
 
   const id = FormData.get("id") as string;
   if (!isUuid(id)) return { error: "Cliente no encontrado." };
