@@ -1,4 +1,5 @@
 import "server-only";
+import { BUSINESS_NAME } from "@/actions/ph-client";
 import { COFFEES_TO_EXCHANGE } from "@/lib/constants";
 import { signClientToken } from "../token";
 import { shopLocations } from "../config";
@@ -20,11 +21,11 @@ export type GoogleClient = {
 
 export const loyaltyClass = () => ({
   id: classId(),
-  issuerName: "Reset Coffee",
-  programName: "The RESeT Club",
+  issuerName: BUSINESS_NAME,
+  programName: BUSINESS_NAME,
   programLogo: {
     sourceUri: { uri: `${publicBase()}/api/wallet/google/logo` },
-    contentDescription: text("Reset Coffee"),
+    contentDescription: text(BUSINESS_NAME),
   },
   hexBackgroundColor: hex(WALLET_COLORS.normal.background),
   countryCode: "CL",
@@ -52,7 +53,7 @@ export function loyaltyObject(client: GoogleClient) {
     classId: classId(),
     state: "ACTIVE",
     accountId: client.id.slice(0, 8),
-    accountName: client.name?.trim() || "Socio Reset",
+    accountName: client.name?.trim() || "Socio",
     hexBackgroundColor: hex(colors.background),
     loyaltyPoints: {
       label: "Cafés",

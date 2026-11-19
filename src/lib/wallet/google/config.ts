@@ -1,5 +1,5 @@
 import "server-only";
-import { APP_ENV } from "@/actions/ph-client";
+import { APP_ENV, BUSINESS_NAME } from "@/actions/ph-client";
 import { webServiceBase } from "../config";
 
 // Google Wallet is optional: without these the "Agregar a Google Wallet" button is hidden.
@@ -20,9 +20,16 @@ export const serviceAccount = (): ServiceAccount =>
 
 const issuer = () => process.env.GOOGLE_WALLET_ISSUER_ID!;
 
-// main and develop share client uuids, so ids carry the environment to keep their passes apart.
-const env = () => APP_ENV.replace(/[^a-z0-9]/gi, "");
-export const classId = () => `${issuer()}.reset_club_${env()}`;
-export const objectId = (clientId: string) => `${issuer()}.${env()}_${clientId}`;
+// One Welve issuer serves every business, so ids carry the business (slug of BUSINESS_NAME)
+// and the environment: main and develop share client uuids, and two cafés must never share a class.
+const slug = (value: string) =>
+  value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "") || "negocio";
+const scope = () => `${slug(BUSINESS_NAME)}_${APP_ENV.replace(/[^a-z0-9]/gi, "")}`;
+export const classId = () => `${issuer()}.${scope()}`;
+export const objectId = (clientId: string) => `${issuer()}.${scope()}_${clientId}`;
 
 export const publicBase = () => webServiceBase()!;
