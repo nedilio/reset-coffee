@@ -15,6 +15,6 @@ export async function notifyGooglePass(clientId: string) {
     console.log(`Google Wallet patch skipped for ${clientId}: no saved pass`);
     return;
   }
-  // NOTIFY asks Google for a field-update notification (it only fires for allowlisted fields).
-  await patchObject({ ...loyaltyObject(client), notifyPreference: "NOTIFY" } as { id: string });
+  // NOTIFY_ON_UPDATE asks Google for a field-update notification (it only fires for allowlisted fields).
+  await patchObject({ ...loyaltyObject(client), notifyPreference: "NOTIFY_ON_UPDATE" } as { id: string });
 }
