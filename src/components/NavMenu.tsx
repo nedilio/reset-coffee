@@ -11,6 +11,7 @@ interface NavItem {
 
 export const ADMIN_ITEMS: NavItem[] = [
   { href: "/admin", label: "Admin" },
+  { href: "/admin/stats", label: "Estadísticas" },
   { href: "/resetqr", label: "QR club" },
 ];
 
@@ -24,6 +25,11 @@ const NavMenu = ({
   className?: string;
 }) => {
   const pathname = usePathname();
+  // Only the most specific match is active: /admin/stats lights "Estadísticas", not "Admin".
+  const activeHref = items
+    .map((i) => i.href)
+    .filter((href) => pathname === href || pathname.startsWith(href + "/"))
+    .sort((a, b) => b.length - a.length)[0];
   return (
     <nav
       aria-label="Principal"
@@ -33,7 +39,7 @@ const NavMenu = ({
       )}
     >
       {items.map(({ href, label }) => {
-        const active = pathname === href || pathname.startsWith(href + "/");
+        const active = href === activeHref;
         return (
           <Link
             key={href}
