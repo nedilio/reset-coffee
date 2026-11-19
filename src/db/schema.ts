@@ -1,5 +1,6 @@
 import { sql } from "drizzle-orm";
 import {
+  bigint,
   check,
   index,
   integer,
@@ -10,6 +11,8 @@ import {
   timestamp,
   uuid,
 } from "drizzle-orm/pg-core";
+
+import { user } from "./auth-schema";
 
 export * from "./auth-schema";
 
@@ -64,6 +67,37 @@ export const walletRegistrations = pgTable(
   (t) => [
     primaryKey({ columns: [t.deviceLibraryId, t.serialNumber] }),
     index("wallet_registrations_serial_idx").on(t.serialNumber),
+  ]
+);
+
+// Every change to a loyalty card, written in the same transaction as the update to `clients`.
+// Source of truth for the owners' stats in /admin/stats (PostHog is for product analytics).
+// Append-only; deleting a client keeps its rows (client_id becomes null) so past sales still count.
+export const CARD_EVENT_TYPES = ["added", "removed", "redeemed", "restored", "reset"] as const;
+export type CardEventType = (typeof CARD_EVENT_TYPES)[number];
+
+export const cardEvents = pgTable(
+  "card_events",
+  {
+    id: bigint("id", { mode: "number" }).primaryKey().generatedAlwaysAsIdentity(),
+    clientId: uuid("client_id").references(() => clients.id, { onDelete: "set null" }),
+    type: text("type").$type<CardEventType>().notNull(),
+    // Coffees on the card after the change.
+    coffeesAfter: smallint("coffees_after").notNull(),
+    // button | scan | dialog
+    source: text("source"),
+    // Shop picked on the barista's device (src/lib/shop.ts); null with a single shop.
+    shop: text("shop"),
+    adminId: text("admin_id").references(() => user.id, { onDelete: "set null" }),
+    createdAt: tz("created_at").notNull().defaultNow(),
+  },
+  (t) => [
+    check(
+      "card_events_type_values",
+      sql`${t.type} in ('added','removed','redeemed','restored','reset')`
+    ),
+    index("card_events_created_at_idx").on(t.createdAt),
+    index("card_events_shop_created_at_idx").on(t.shop, t.createdAt),
   ]
 );
 
