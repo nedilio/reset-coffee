@@ -5,6 +5,9 @@ import { after } from "next/server";
 // `environment` property (production | preview | development). Filter dashboards on
 // environment = production to keep test traffic out of the numbers.
 export const APP_ENV = process.env.NEXT_PUBLIC_APP_ENV ?? "development";
+// The app is meant to run for several cafés against the same PostHog project, so every event
+// also carries `business` (BUSINESS_NAME, see next.config.mjs). `shop` is the branch inside it.
+export const BUSINESS_NAME = process.env.NEXT_PUBLIC_BUSINESS_NAME ?? "Reset Coffee";
 
 interface ServerEvent {
   distinctId: string;
@@ -40,6 +43,7 @@ export function captureServerEvent({
       ...(set && { $set: set }),
       ...(setOnce && { $set_once: setOnce }),
       environment: APP_ENV,
+      business: BUSINESS_NAME,
     },
   });
 

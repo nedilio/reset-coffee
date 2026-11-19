@@ -11,8 +11,11 @@ if (typeof window !== "undefined" && process.env.NEXT_PUBLIC_POSTHOG_KEY) {
     before_send: (event) =>
       window.location.pathname.startsWith("/admin") ? null : event,
   });
-  // Attached to every browser event; see APP_ENV in src/actions/ph-client.ts.
-  posthog.register({ environment: process.env.NEXT_PUBLIC_APP_ENV });
+  // Attached to every browser event; see APP_ENV and BUSINESS_NAME in src/actions/ph-client.ts.
+  posthog.register({
+    environment: process.env.NEXT_PUBLIC_APP_ENV,
+    business: process.env.NEXT_PUBLIC_BUSINESS_NAME,
+  });
 }
 
 export const PhProvider = ({ children }: { children: React.ReactNode }) => {
